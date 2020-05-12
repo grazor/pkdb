@@ -9,15 +9,22 @@ type NodeData struct {
 	Name string
 }
 
-type Node interface {
+type TreeNode interface {
 	MetaData() *NodeData
-	Parent() Node
-	Children() []Node
+	Parent() TreeNode
+	Children() []TreeNode
+}
 
+type LoadableNode interface {
 	Load(depth int) error
 }
 
-func GetNode(uri string) (Node, error) {
+type LoadableTreeNode interface {
+	TreeNode
+	LoadableNode
+}
+
+func GetNode(uri string) (LoadableNode, error) {
 	u, err := url.Parse(uri)
 	if err != nil {
 		return nil, err

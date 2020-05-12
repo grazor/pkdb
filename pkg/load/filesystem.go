@@ -26,7 +26,7 @@ func (node *FsNode) String() string {
 
 	for len(children) > 0 {
 		n, d := children[0].n, children[0].d
-		info += fmt.Sprintf("\n%v%v (%v)", strings.Repeat("-", d), n.Name, n.path)
+		info += fmt.Sprintf("\n%v-%v (%v)", strings.Repeat(" |", d+1), n.Name, n.path)
 
 		children = children[1:]
 		if n.children != nil && len(n.children) > 0 {
@@ -52,49 +52,42 @@ func NewFsNode(path string) (*FsNode, error) {
 	return &FsNode{NodeData: &NodeData{Name: "root"}, path: absPath}, nil
 }
 
-func (node *FsNode) scanDir(depth int, wg *sync.WaitGroup) error {
-	if depth == 0 {
-		return nil
-	}
-
-	dir, err := os.Open(node.path)
-	if err != nil {
-		return err
-	}
-
-	dirContents, err := dir.Readdir(-1)
-	if err != nil {
-		return err
-	}
-
-	for _, content := range dirContents {
-		fullPath := filepath.Join(node.path, content.Name())
-		childNode := &FsNode{NodeData: &NodeData{content.Name()}, path: fullPath, parent: node}
-		node.children = append(node.children, childNode)
-		if content.IsDir() {
-			wg.Add(1)
-			go func() {
-				defer wg.Done()
-				childNode.scanDir(depth-1, wg)
-			}()
-		}
-	}
-	return nil
-}
-
 func (node *FsNode) Load(depth int) error {
 	if depth == 0 {
 		return nil
 	}
 
-	var wg sync.WaitGroup
-
-	wg.Add(1)
-	go func() {
+	var scanDir func(node *FsNode, depth int, wg *sync.WaitGroup)
+	scanDir = func(scanNode *FsNode, depth int, wg *sync.WaitGroup) {
 		defer wg.Done()
-		node.scanDir(depth-1, &wg)
-	}()
+		if depth == 0 {
+			return
+		}
 
+		dir, err := os.Open(scanNode.path)
+		if err != nil {
+			return
+		}
+
+		dirContents, err := dir.Readdir(-1)
+		if err != nil {
+			return
+		}
+
+		for _, content := range dirContents {
+			fullPath := filepath.Join(scanNode.path, content.Name())
+			childNode := &FsNode{NodeData: &NodeData{content.Name()}, path: fullPath, parent: scanNode}
+			scanNode.children = append(scanNode.children, childNode)
+			if content.IsDir() {
+				wg.Add(1)
+				go scanDir(childNode, depth-1, wg)
+			}
+		}
+	}
+
+	var wg sync.WaitGroup
+	wg.Add(1)
+	go scanDir(node, depth-1, &wg)
 	wg.Wait()
 	return nil
 }
@@ -103,12 +96,12 @@ func (node *FsNode) MetaData() *NodeData {
 	return node.NodeData
 }
 
-func (node *FsNode) Parent() Node {
+func (node *FsNode) Parent() TreeNode {
 	return node.parent
 }
 
-func (node *FsNode) Children() []Node {
-	var children []Node = make([]Node, len(node.children))
+func (node *FsNode) Children() []TreeNode {
+	var children []TreeNode = make([]TreeNode, len(node.children))
 	for i, n := range node.children {
 		children[i] = n
 	}
