@@ -17,7 +17,7 @@ type Node interface {
 	Load(depth int) error
 }
 
-func GetLoader(uri string) (Node, error) {
+func GetNode(uri string) (Node, error) {
 	u, err := url.Parse(uri)
 	if err != nil {
 		return nil, err
