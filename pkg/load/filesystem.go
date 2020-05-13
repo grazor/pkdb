@@ -68,10 +68,15 @@ func (node *FsNode) Load(depth int) error {
 		if err != nil {
 			return
 		}
+		defer dir.Close()
 
 		dirContents, err := dir.Readdir(-1)
 		if err != nil {
 			return
+		}
+
+		if len(dirContents) > 0 {
+			scanNode.children = make([]*FsNode, 0, len(dirContents))
 		}
 
 		for _, content := range dirContents {
