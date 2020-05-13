@@ -17,6 +17,7 @@ type TreeNode interface {
 
 type LoadableNode interface {
 	Load(depth int) error
+	Watch() (chan interface{}, error)
 }
 
 type LoadableTreeNode interface {

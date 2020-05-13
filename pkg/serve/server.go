@@ -6,6 +6,10 @@ import (
 	"github.com/grazor/pkdb/pkg/load"
 )
 
+type Server interface {
+	Serve(load.TreeNode) (chan interface{}, error)
+}
+
 func Serve(source string, destinations []string) {
 	root, err := load.GetNode(source)
 	if err != nil {
@@ -17,5 +21,12 @@ func Serve(source string, destinations []string) {
 		log.Fatal(err)
 	}
 
-	log.Print(root)
+	log.Print("Watching")
+	doneWatch, err := root.Watch()
+	if err != nil {
+		log.Fatal(err)
+	}
+	defer close(doneWatch)
+
+	<-doneWatch
 }
