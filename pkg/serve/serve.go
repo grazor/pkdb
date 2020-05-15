@@ -1,14 +1,18 @@
-package load
+package serve
 
 import (
 	"fmt"
 	"net/url"
 
 	"github.com/grazor/pkdb/pkg/kdb"
-	"github.com/grazor/pkdb/pkg/load/filesystem"
+	"github.com/grazor/pkdb/pkg/serve/fuse"
 )
 
-func New(uri string) (kdb.TreeNode, error) {
+type Server interface {
+	Serve(kdb.TreeNode, chan interface{}) error
+}
+
+func New(uri string) (Server, error) {
 	u, err := url.Parse(uri)
 	if err != nil {
 		return nil, err
@@ -17,7 +21,7 @@ func New(uri string) (kdb.TreeNode, error) {
 	switch u.Scheme {
 	case "", "file":
 		{
-			return filesystem.New(u.Hostname() + u.Path)
+			return fuse.New(u.Hostname() + u.Path)
 		}
 	}
 

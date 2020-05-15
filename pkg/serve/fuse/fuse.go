@@ -2,18 +2,22 @@ package fuse
 
 import (
 	"github.com/hanwen/go-fuse/v2/fs"
+	"github.com/hanwen/go-fuse/v2/fuse"
+
 	"os"
 	"path/filepath"
 
-	"github.com/grazor/pkdb/pkg/load"
+	"github.com/grazor/pkdb/pkg/kdb"
 )
 
 type FuseServer struct {
-	path string
+	fs.Inode
+	dataRoot kdb.TreeNode
+	target   string
 }
 
-func NewFuseServer(path string) (*FuseServer, error) {
-	absPath, err := filepath.Abs(path)
+func New(target string) (*FuseServer, error) {
+	absPath, err := filepath.Abs(target)
 	if err != nil {
 		return nil, err
 	}
@@ -22,16 +26,17 @@ func NewFuseServer(path string) (*FuseServer, error) {
 		return nil, err
 	}
 
-	return &FuseServer{path: path}, nil
+	return &FuseServer{target: target}, nil
 }
 
-func (server *FuseServer) Serve(root load.TreeNode) (chan interface{}, error) {
-	fuse, err := fs.Mount(server.path, nil, &fs.Options{})
+func (server *FuseServer) Serve(root kdb.TreeNode, done chan interface{}) error {
+	server.dataRoot = root
+
+	fuse, err := fs.Mount(server.target, server, &fs.Options{MountOptions: fuse.MountOptions{Debug: true}})
 	if err != nil {
-		return nil, err
+		return err
 	}
 	fuse.Wait()
 
-	done := make(chan interface{})
-	return done, nil
+	return nil
 }

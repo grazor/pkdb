@@ -1,7 +1,7 @@
 package cmd
 
 import (
-	"github.com/grazor/pkdb/pkg/serve"
+	"github.com/grazor/pkdb/pkg/run"
 
 	"github.com/spf13/cobra"
 )
@@ -15,5 +15,5 @@ var serveCmd = &cobra.Command{
 }
 
 func runServer(cmd *cobra.Command, args []string) {
-	serve.Serve(args[0], args[1:])
+	run.Run(args[0], args[1:])
 }
