@@ -1,6 +1,9 @@
+package fs
 
 import (
+	"os"
 	"path/filepath"
+	"time"
 
 	"github.com/grazor/pkdb/pkg/provider"
 )
@@ -9,7 +12,7 @@ func (entry fsEntry) absolutePath() string {
 	return filepath.Join(entry.provider.basePath, entry.relativePath)
 }
 
-func (entry fsEntry) Id() string {
+func (entry fsEntry) ID() string {
 	//TODO: read id from attrs
 	_, name := filepath.Split(entry.relativePath)
 	return name
@@ -56,11 +59,11 @@ func (entry fsEntry) Children() ([]provider.Entry, error) {
 	children := make([]provider.Entry, 0, len(dirContents))
 	for _, childInfo := range dirContents {
 		child := fsEntry{
-			provider: entry.provider,
+			provider:     entry.provider,
 			relativePath: filepath.Join(entry.relativePath, childInfo.Name()),
-			fileInfo: childInfo,
+			fileInfo:     childInfo,
 		}
-		children = append(children, chidl)
+		children = append(children, child)
 	}
 	return children, nil
 }

@@ -7,7 +7,7 @@ type Provider interface {
 }
 
 type Entry interface {
-	Id() string
+	ID() string
 	Name() string
 	Path() string
 	Attrs() map[string]interface{}
