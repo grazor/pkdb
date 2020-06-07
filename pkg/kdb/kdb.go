@@ -1,6 +1,11 @@
+// Package kdb implements knowledge database logic
 package kdb
 
-import "github.com/grazor/pkdb/pkg/provider"
+import (
+	"time"
+
+	"github.com/grazor/pkdb/pkg/provider"
+)
 
 type KdbError struct {
 	Inner   error
@@ -11,39 +16,50 @@ func (err KdbError) Error() string {
 	return err.Message
 }
 
-type kdbTree struct {
-	Provider *provider.Provider
+type KdbTree struct {
+	Provider provider.Provider
 
-	Root   *kdbNode
-	errors chan<- KdbError
+	Root   *KdbNode
+	errors chan error
 }
 
-type kdbNode struct {
-	ID    string
-	Name  string
-	Path  string
-	Attrs map[string]interface{}
+type KdbNode struct {
+	ID          string
+	Name        string
+	HasChildren bool
+	Attrs       map[string]interface{}
 
-	Parent *kdbNode
+	Path string
+	Size int64
+	Time time.Time
 
-	children map[string]*kdbNode
+	Parent   *KdbNode
+	children map[string]*KdbNode
 
-	Tree *kdbTree
+	Tree *KdbTree
 }
 
-func New(provider *provider.Provider) (*kdbTree, <-chan KdbError) {
-	errors = make(chan KdbError)
-	root := &kdbNode{
+func New(provider provider.Provider) *KdbTree {
+	errors := make(chan error)
+	root := &KdbNode{
 		Name: "root",
 		Path: "",
 	}
 
-	tree := &kdbTree{
+	tree := &KdbTree{
 		Provider: provider,
 		Root:     root,
 		errors:   errors,
 	}
 
 	root.Tree = tree
-	return tree, errors
+	return tree
+}
+
+func (tree *KdbTree) Errors() <-chan error {
+	return tree.errors
+}
+
+func (tree *KdbTree) Close() {
+	close(tree.errors)
 }

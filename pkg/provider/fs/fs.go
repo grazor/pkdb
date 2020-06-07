@@ -17,10 +17,11 @@ type fsEntry struct {
 	fileInfo     os.FileInfo
 }
 
-func New(path string) *fsProvider {
-	return &fsProvider{
+func New(path string) (*fsProvider, error) {
+	provider := &fsProvider{
 		basePath: path,
 	}
+	return provider, nil
 }
 
 func (provider *fsProvider) Get(relativePath string) (provider.Entry, error) {

@@ -32,6 +32,10 @@ func (entry fsEntry) Attrs() map[string]interface{} {
 	return nil
 }
 
+func (entry fsEntry) Size() int64 {
+	return entry.fileInfo.Size()
+}
+
 func (entry fsEntry) Time() time.Time {
 	return entry.fileInfo.ModTime()
 }

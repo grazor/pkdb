@@ -1,18 +1,27 @@
 package kdb
 
-import "sync"
+import (
+	"fmt"
+	"sync"
+)
 
-func (node *kdbNode) Children() map[string]*kdbNode {
-	entry, err := parent.Tree.Provider.Get(parent.Path)
-}
-
-func (node *kdbNode) Load(depth int) error {
-	if depth == 0 {
+func (node *KdbNode) Children() map[string]*KdbNode {
+	if !node.HasChildren {
 		return nil
 	}
+	if node.children == nil {
+		node.Load(1)
+	}
+	return node.children
+}
 
-	var scan func(parent *kdbNode, depth int, errors chan<- error, wg *sync.WaitGroup)
-	scan = func(parent *kdbNode, depth int, errors chan<- error, wg *sync.WaitGroup) {
+func (node *KdbNode) Load(depth int) {
+	if depth == 0 {
+		return
+	}
+
+	var scan func(parent *KdbNode, depth int, wg *sync.WaitGroup)
+	scan = func(parent *KdbNode, depth int, wg *sync.WaitGroup) {
 		defer wg.Done()
 		if depth == 0 {
 			return
@@ -20,40 +29,53 @@ func (node *kdbNode) Load(depth int) error {
 
 		entry, err := parent.Tree.Provider.Get(parent.Path)
 		if err != nil {
-			errors <- err
+			select {
+			case parent.Tree.errors <- KdbError{
+				Inner:   err,
+				Message: fmt.Sprintf("could not get %v node", parent.Path),
+			}:
+			default:
+			}
+
 			return
 		}
 
 		children, err := entry.Children()
 		if err != nil {
-			errors <- err
+			select {
+			case parent.Tree.errors <- KdbError{
+				Inner:   err,
+				Message: fmt.Sprintf("could not get %v node children", parent.Path),
+			}:
+			default:
+			}
 			return
 		}
 
-		parent.children = make(map[string]*kdbNode)
+		parent.children = make(map[string]*KdbNode)
 		for _, child := range children {
-			childNode := &kdbNode{
-				ID:     child.ID(),
-				Name:   child.Name(),
-				Path:   child.Path(),
-				Attrs:  child.Attrs(),
-				Parent: parent,
-				Tree:   parent.Tree,
+			childNode := &KdbNode{
+				ID:          child.ID(),
+				Name:        child.Name(),
+				Path:        child.Path(),
+				Size:        child.Size(),
+				Time:        child.Time(),
+				HasChildren: child.HasChildren(),
+				Attrs:       child.Attrs(),
+				Parent:      parent,
+				Tree:        parent.Tree,
 			}
 			parent.children[childNode.Name] = childNode
 
 			if child.HasChildren() {
 				wg.Add(1)
-				go scan(childNode, depth-1, errors, wg)
+				go scan(childNode, depth-1, wg)
 			}
 		}
 	}
 
-	errors := make(chan error)
 	var wg *sync.WaitGroup
 	wg.Add(1)
-	go scan(node, depth-1, errors, wg)
+	go scan(node, depth-1, wg)
 	wg.Wait()
-
-	return nil
 }

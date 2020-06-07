@@ -11,6 +11,7 @@ type Entry interface {
 	Name() string
 	Path() string
 	Attrs() map[string]interface{}
+
 	HasChildren() bool
 	Children() ([]Entry, error)
 
@@ -18,5 +19,6 @@ type Entry interface {
 	Move()
 	Delete()
 
+	Size() int64
 	Time() time.Time
 }
