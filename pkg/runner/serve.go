@@ -2,11 +2,12 @@ package runner
 
 import (
 	"context"
+	"sync"
 
 	"github.com/grazor/pkdb/pkg/kdb"
 )
 
-func Serve(ctx context.Context, providerURI string, serverURIs ...string) {
+func Serve(ctx context.Context, providerURI string, serverURIs ...string) (*sync.WaitGroup, error) {
 	provider, err := NewProvider(providerURI)
 	if err != nil {
 		msg := "Unexpected error occurred while creating provider"
@@ -14,7 +15,7 @@ func Serve(ctx context.Context, providerURI string, serverURIs ...string) {
 			msg = err.Error()
 		}
 		handleError(err, msg)
-		return
+		return nil, err
 	}
 
 	servers, errors := NewServersGroup(serverURIs...)
@@ -26,21 +27,18 @@ func Serve(ctx context.Context, providerURI string, serverURIs ...string) {
 			}
 			handleError(err, msg)
 		}
-		return
+		return nil, err
 	}
 
 	kdbTree := kdb.New(provider)
-	serveCtx, cancel := context.WithCancel(ctx)
-	defer cancel()
-
-	serverErrors, wg, err := servers.Serve(serveCtx, kdbTree)
+	serverErrors, wg, err := servers.Serve(ctx, kdbTree)
 	if err != nil {
 		msg := "Unexpected error occurred while starting server"
 		if _, ok := err.(RunnerError); ok {
 			msg = err.Error()
 		}
 		handleError(err, msg)
-		return
+		return nil, err
 	}
 
 	go func(errors <-chan error) {
@@ -52,6 +50,5 @@ func Serve(ctx context.Context, providerURI string, serverURIs ...string) {
 			handleError(err, msg)
 		}
 	}(serverErrors)
-
-	wg.Wait()
+	return wg, nil
 }

@@ -40,7 +40,7 @@ func NewServer(URI string) (server.Server, error) {
 }
 
 func NewServersGroup(URIs ...string) (serversGroup, []error) {
-	providers := make(serversGroup, len(URIs))
+	providers := make(serversGroup, 0, len(URIs))
 	errors := make([]error, 0)
 
 	for _, URI := range URIs {

@@ -2,6 +2,10 @@ package cmd
 
 import (
 	"context"
+	"log"
+	"os"
+	"os/signal"
+	"syscall"
 
 	"github.com/grazor/pkdb/pkg/runner"
 	"github.com/spf13/cobra"
@@ -16,6 +20,24 @@ var serveCmd = &cobra.Command{
 }
 
 func runServer(cmd *cobra.Command, args []string) {
-	ctx := context.TODO()
-	runner.Serve(ctx, args[0], args[1:]...)
+	ctx, cancel := context.WithCancel(context.Background())
+
+	log.Println("Starting")
+	wg, err := runner.Serve(ctx, args[0], args[1:]...)
+	if err != nil {
+		cancel()
+		return
+	}
+
+	signals := make(chan os.Signal, 1)
+	signal.Notify(signals, syscall.SIGINT, syscall.SIGTERM)
+
+	wg.Add(1)
+	go func() {
+		defer wg.Done()
+		<-signals
+		cancel()
+		log.Println("Terminating")
+	}()
+	wg.Wait()
 }
