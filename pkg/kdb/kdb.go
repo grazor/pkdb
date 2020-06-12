@@ -42,8 +42,9 @@ type KdbNode struct {
 func New(provider provider.Provider) *KdbTree {
 	errors := make(chan error)
 	root := &KdbNode{
-		Name: "root",
-		Path: "",
+		Name:        "root",
+		Path:        "",
+		HasChildren: true,
 	}
 
 	tree := &KdbTree{

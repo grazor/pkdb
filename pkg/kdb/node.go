@@ -5,6 +5,10 @@ import (
 	"sync"
 )
 
+func (node *KdbNode) String() string {
+	return fmt.Sprintf("Node %v (%v)", node.Path, node.Name)
+}
+
 func (node *KdbNode) Children() map[string]*KdbNode {
 	if !node.HasChildren {
 		return nil
@@ -15,11 +19,12 @@ func (node *KdbNode) Children() map[string]*KdbNode {
 	return node.children
 }
 
-func (node *KdbNode) Load(depth int) {
-	if depth == 0 {
-		return
-	}
+func (node *KdbNode) Child(name string) (*KdbNode, bool) {
+	n, ok := node.Children()[name]
+	return n, ok
+}
 
+func (node *KdbNode) Load(depth int) {
 	var scan func(parent *KdbNode, depth int, wg *sync.WaitGroup)
 	scan = func(parent *KdbNode, depth int, wg *sync.WaitGroup) {
 		defer wg.Done()
@@ -74,8 +79,8 @@ func (node *KdbNode) Load(depth int) {
 		}
 	}
 
-	var wg *sync.WaitGroup
+	var wg sync.WaitGroup
 	wg.Add(1)
-	go scan(node, depth-1, wg)
+	go scan(node, depth, &wg)
 	wg.Wait()
 }
