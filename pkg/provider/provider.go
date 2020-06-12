@@ -1,6 +1,18 @@
 package provider
 
-import "time"
+import (
+	"io"
+	"time"
+)
+
+type ProviderError struct {
+	Inner   error
+	Message string
+}
+
+func (err ProviderError) Error() string {
+	return err.Message
+}
 
 type Provider interface {
 	Get(path string) (Entry, error)
@@ -14,6 +26,8 @@ type Entry interface {
 
 	HasChildren() bool
 	Children() ([]Entry, error)
+
+	io.Reader
 
 	AddChild()
 	Move()

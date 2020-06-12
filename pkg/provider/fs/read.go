@@ -1,6 +1,7 @@
 package fs
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 	"time"
@@ -51,13 +52,19 @@ func (entry fsEntry) Children() ([]provider.Entry, error) {
 
 	dir, err := os.Open(entry.absolutePath())
 	if err != nil {
-		return nil, err
+		return nil, provider.ProviderError{
+			Inner:   err,
+			Message: fmt.Sprintf("unable to open %v", entry.absolutePath()),
+		}
 	}
 	defer dir.Close()
 
 	dirContents, err := dir.Readdir(-1)
 	if err != nil {
-		return nil, err
+		return nil, provider.ProviderError{
+			Inner:   err,
+			Message: fmt.Sprintf("unable to read dir %v", entry.absolutePath()),
+		}
 	}
 
 	children := make([]provider.Entry, 0, len(dirContents))
@@ -70,4 +77,16 @@ func (entry fsEntry) Children() ([]provider.Entry, error) {
 		children = append(children, child)
 	}
 	return children, nil
+}
+
+func (entry fsEntry) Read(p []byte) (n int, err error) {
+	file, err := os.Open(entry.absolutePath())
+	if err != nil {
+		return 0, provider.ProviderError{
+			Inner:   err,
+			Message: fmt.Sprintf("unable to open %v", entry.absolutePath()),
+		}
+	}
+
+	return file.Read(p)
 }

@@ -1,6 +1,7 @@
 package fs
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 
@@ -24,15 +25,18 @@ func New(path string) (*fsProvider, error) {
 	return provider, nil
 }
 
-func (provider *fsProvider) Get(relativePath string) (provider.Entry, error) {
-	fullPath := filepath.Join(provider.basePath, relativePath)
+func (prov *fsProvider) Get(relativePath string) (provider.Entry, error) {
+	fullPath := filepath.Join(prov.basePath, relativePath)
 	info, err := os.Stat(fullPath)
 	if err != nil {
-		return nil, err
+		return nil, provider.ProviderError{
+			Inner:   err,
+			Message: fmt.Sprintf("unable to stat %v", fullPath),
+		}
 	}
 
 	entry := fsEntry{
-		provider:     provider,
+		provider:     prov,
 		relativePath: relativePath,
 		fileInfo:     info,
 	}

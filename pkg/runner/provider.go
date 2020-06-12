@@ -24,7 +24,7 @@ func NewProvider(URI string) (provider.Provider, error) {
 			if err != nil {
 				return nil, RunnerError{
 					Inner:   err,
-					Message: fmt.Sprint("failed to create fs provider from %v%v", u.Hostname(), u.Path),
+					Message: fmt.Sprintf("failed to create fs provider from %v%v", u.Hostname(), u.Path),
 				}
 			}
 			return provider, nil
@@ -33,3 +33,4 @@ func NewProvider(URI string) (provider.Provider, error) {
 
 	return nil, RunnerError{Message: fmt.Sprintf("unsupported provider scheme %v", u.Scheme)}
 }
+
