@@ -1,7 +1,6 @@
 package fuse
 
 import (
-	"bytes"
 	"context"
 	"fmt"
 	"syscall"
@@ -18,7 +17,7 @@ func (node *fuseNode) Open(ctx context.Context, flags uint32) (fh fs.FileHandle,
 	if node.kdbNode.HasChildren {
 		return nil, 0, syscall.ENOTSUP
 	}
-	return node.kdbNode, fuse.FOPEN_NONSEEKABLE, fs.OK
+	return node.kdbNode, fuse.FOPEN_KEEP_CACHE, fs.OK
 }
 
 func (node *fuseNode) Read(ctx context.Context, f fs.FileHandle, dest []byte, off int64) (fuse.ReadResult, syscall.Errno) {
@@ -31,13 +30,12 @@ func (node *fuseNode) Read(ctx context.Context, f fs.FileHandle, dest []byte, of
 	}
 	defer reader.Close()
 
-	var buf bytes.Buffer
-	_, err = buf.ReadFrom(reader)
+	_, err = reader.Read(dest)
 	if err != nil {
 		node.server.errors <- server.ServerError{
 			Inner:   err,
 			Message: fmt.Sprintf("unable to read %v", node.kdbNode),
 		}
 	}
-	return fuse.ReadResultData(buf.Bytes()), fs.OK
+	return fuse.ReadResultData(dest), fs.OK
 }
