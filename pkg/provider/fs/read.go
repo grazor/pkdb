@@ -2,6 +2,7 @@ package fs
 
 import (
 	"fmt"
+	"io"
 	"os"
 	"path/filepath"
 	"time"
@@ -79,14 +80,13 @@ func (entry fsEntry) Children() ([]provider.Entry, error) {
 	return children, nil
 }
 
-func (entry fsEntry) Read(p []byte) (n int, err error) {
+func (entry fsEntry) Open() (io.ReadWriteCloser, error) {
 	file, err := os.Open(entry.absolutePath())
 	if err != nil {
-		return 0, provider.ProviderError{
+		return nil, provider.ProviderError{
 			Inner:   err,
 			Message: fmt.Sprintf("unable to open %v", entry.absolutePath()),
 		}
 	}
-
-	return file.Read(p)
+	return file, nil
 }

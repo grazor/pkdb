@@ -22,8 +22,17 @@ func (node *fuseNode) Open(ctx context.Context, flags uint32) (fh fs.FileHandle,
 }
 
 func (node *fuseNode) Read(ctx context.Context, f fs.FileHandle, dest []byte, off int64) (fuse.ReadResult, syscall.Errno) {
+	reader, err := node.kdbNode.Open()
+	if err != nil {
+		node.server.errors <- server.ServerError{
+			Inner:   err,
+			Message: fmt.Sprintf("unable to open node for read %v", node.kdbNode),
+		}
+	}
+	defer reader.Close()
+
 	var buf bytes.Buffer
-	_, err := buf.ReadFrom(node.kdbNode)
+	_, err = buf.ReadFrom(reader)
 	if err != nil {
 		node.server.errors <- server.ServerError{
 			Inner:   err,

@@ -27,7 +27,7 @@ type Entry interface {
 	HasChildren() bool
 	Children() ([]Entry, error)
 
-	io.Reader
+	Open() (io.ReadWriteCloser, error)
 
 	AddChild()
 	Move()
