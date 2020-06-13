@@ -87,7 +87,12 @@ func (fserver *fuseServer) Serve(ctx context.Context, wg *sync.WaitGroup, tree *
 	fserver.tree = tree
 	fserver.fuseRoot = &fuseNode{server: fserver, kdbNode: tree.Root}
 
-	fuse, err := fs.Mount(fserver.mountPoint, fserver.fuseRoot, &fs.Options{})
+	fuse, err := fs.Mount(fserver.mountPoint, fserver.fuseRoot, &fs.Options{
+		MountOptions: fuse.MountOptions{
+			Name:   "pkdb",
+			FsName: "pkdb",
+		},
+	})
 	if err != nil {
 		return server.ServerError{
 			Inner:   err,

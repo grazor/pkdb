@@ -3,6 +3,8 @@ package kdb
 import (
 	"fmt"
 	"sync"
+
+	"github.com/grazor/pkdb/pkg/provider"
 )
 
 func (node *KdbNode) Children() map[string]*KdbNode {
@@ -55,19 +57,7 @@ func (node *KdbNode) Load(depth int) {
 
 		parent.children = make(map[string]*KdbNode)
 		for _, child := range children {
-			childNode := &KdbNode{
-				ID:          child.ID(),
-				Name:        child.Name(),
-				Path:        child.Path(),
-				Size:        child.Size(),
-				Time:        child.Time(),
-				HasChildren: child.HasChildren(),
-				Attrs:       child.Attrs(),
-				Parent:      parent,
-				Tree:        parent.Tree,
-			}
-			parent.children[childNode.Name] = childNode
-
+			childNode := nodeFromProvider(parent, child)
 			if child.HasChildren() {
 				wg.Add(1)
 				go scan(childNode, depth-1, wg)
@@ -81,3 +71,22 @@ func (node *KdbNode) Load(depth int) {
 	wg.Wait()
 }
 
+func nodeFromProvider(parent *KdbNode, entry provider.Entry) *KdbNode {
+	node := &KdbNode{
+		ID:          entry.ID(),
+		Name:        entry.Name(),
+		Path:        entry.Path(),
+		Size:        entry.Size(),
+		Time:        entry.Time(),
+		HasChildren: entry.HasChildren(),
+		Attrs:       entry.Attrs(),
+	}
+
+	if parent != nil {
+		node.Parent = parent
+		node.Tree = parent.Tree
+		parent.children[node.Name] = node
+	}
+
+	return node
+}

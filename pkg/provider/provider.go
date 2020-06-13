@@ -29,7 +29,7 @@ type Entry interface {
 
 	Open() (io.ReadWriteCloser, error)
 
-	AddChild()
+	AddChild(name string, container bool) (Entry, error)
 	Move()
 	Delete()
 
