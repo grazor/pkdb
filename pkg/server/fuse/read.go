@@ -3,6 +3,7 @@ package fuse
 import (
 	"context"
 	"fmt"
+	"io"
 	"syscall"
 
 	"github.com/grazor/pkdb/pkg/server"
@@ -30,8 +31,7 @@ func (node *fuseNode) Read(ctx context.Context, f fs.FileHandle, dest []byte, of
 	}
 	defer reader.Close()
 
-	_, err = reader.Read(dest)
-	if err != nil {
+	if _, err = reader.Read(dest); err != nil && err != io.EOF {
 		node.server.errors <- server.ServerError{
 			Inner:   err,
 			Message: fmt.Sprintf("unable to read %v", node.kdbNode),

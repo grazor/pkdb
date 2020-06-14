@@ -53,7 +53,26 @@ func (node *fuseNode) Setattr(ctx context.Context, f fs.FileHandle, in *fuse.Set
 }
 
 func (node *fuseNode) Write(ctx context.Context, f fs.FileHandle, data []byte, off int64) (written uint32, errno syscall.Errno) {
-	return 0, fs.OK
+	writeCloser, err := node.kdbNode.Open()
+	if err != nil {
+		node.server.errors <- server.ServerError{
+			Inner:   err,
+			Message: fmt.Sprintf("unable to open for write %v", node.kdbNode.Path),
+		}
+		return 0, syscall.EFAULT
+	}
+	defer writeCloser.Close()
+
+	n, err := writeCloser.Write(data)
+	fmt.Println(err)
+	if err != nil {
+		node.server.errors <- server.ServerError{
+			Inner:   err,
+			Message: fmt.Sprintf("failed to write %v", node.kdbNode.Path),
+		}
+		return 0, syscall.EFAULT
+	}
+	return uint32(n), fs.OK
 }
 
 func (node *fuseNode) Fsync(ctx context.Context, f fs.FileHandle, flags uint32) syscall.Errno {
