@@ -27,6 +27,7 @@ type Entry interface {
 	HasChildren() bool
 	Children() ([]Entry, error)
 
+	// TODO: move write methods to WritableEntry
 	Reader(off int64) (io.ReadCloser, error)
 	Writer(off int64) (io.WriteCloser, error)
 
