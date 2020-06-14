@@ -27,7 +27,8 @@ type Entry interface {
 	HasChildren() bool
 	Children() ([]Entry, error)
 
-	Open() (io.ReadWriteCloser, error)
+	Reader(off int64) (io.ReadCloser, error)
+	Writer(off int64) (io.WriteCloser, error)
 
 	AddChild(name string, container bool) (Entry, error)
 	Move()

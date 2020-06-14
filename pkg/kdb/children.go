@@ -26,9 +26,6 @@ func (node *KdbNode) Load(depth int) {
 	var scan func(parent *KdbNode, depth int, wg *sync.WaitGroup)
 	scan = func(parent *KdbNode, depth int, wg *sync.WaitGroup) {
 		defer wg.Done()
-		if depth == 0 {
-			return
-		}
 
 		entry, err := parent.Tree.Provider.Get(parent.Path)
 		if err != nil {
@@ -58,10 +55,11 @@ func (node *KdbNode) Load(depth int) {
 		parent.children = make(map[string]*KdbNode)
 		for _, child := range children {
 			childNode := nodeFromProvider(parent, child)
-			if child.HasChildren() {
+			if depth > 1 && child.HasChildren() {
 				wg.Add(1)
 				go scan(childNode, depth-1, wg)
 			}
+
 		}
 	}
 
@@ -69,6 +67,24 @@ func (node *KdbNode) Load(depth int) {
 	wg.Add(1)
 	go scan(node, depth, &wg)
 	wg.Wait()
+}
+
+func (node *KdbNode) Reload() error {
+	entry, err := node.Tree.Provider.Get(node.Path)
+	if err != nil {
+		return KdbError{
+			Inner:   err,
+			Message: fmt.Sprintf("could not get %v node", node.Path),
+		}
+	}
+	node.ID = entry.ID()
+	node.Name = entry.Name()
+	node.Path = entry.Path()
+	node.Size = entry.Size()
+	node.Time = entry.Time()
+	node.HasChildren = entry.HasChildren()
+	node.Attrs = entry.Attrs()
+	return nil
 }
 
 func nodeFromProvider(parent *KdbNode, entry provider.Entry) *KdbNode {

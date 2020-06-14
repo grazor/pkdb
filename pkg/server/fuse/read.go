@@ -18,11 +18,11 @@ func (node *fuseNode) Open(ctx context.Context, flags uint32) (fh fs.FileHandle,
 	if node.kdbNode.HasChildren {
 		return nil, 0, syscall.ENOTSUP
 	}
-	return node.kdbNode, fuse.FOPEN_KEEP_CACHE, fs.OK
+	return node.kdbNode, 0, fs.OK
 }
 
 func (node *fuseNode) Read(ctx context.Context, f fs.FileHandle, dest []byte, off int64) (fuse.ReadResult, syscall.Errno) {
-	reader, err := node.kdbNode.Open()
+	reader, err := node.kdbNode.Reader(off)
 	if err != nil {
 		node.server.errors <- server.ServerError{
 			Inner:   err,
@@ -31,7 +31,7 @@ func (node *fuseNode) Read(ctx context.Context, f fs.FileHandle, dest []byte, of
 	}
 	defer reader.Close()
 
-	if _, err = reader.Read(dest); err != nil && err != io.EOF {
+	if _, err := reader.Read(dest); err != nil && err != io.EOF {
 		node.server.errors <- server.ServerError{
 			Inner:   err,
 			Message: fmt.Sprintf("unable to read %v", node.kdbNode),

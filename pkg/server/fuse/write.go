@@ -21,6 +21,8 @@ var _ fs.NodeFsyncer = (*fuseNode)(nil)
 func (node *fuseNode) Create(ctx context.Context, name string, flags uint32, mode uint32, out *fuse.EntryOut) (newNode *fs.Inode, fh fs.FileHandle, fuseFlags uint32, errno syscall.Errno) {
 	kdbChild, err := node.kdbNode.AddChild(name, false)
 	if err != nil {
+		// TODO: select case errors<- default
+		// TODO: here and everywhere else
 		node.server.errors <- server.ServerError{
 			Inner:   err,
 			Message: fmt.Sprintf("unable to create child for %v: %v", node.kdbNode.Path, name),
@@ -53,25 +55,37 @@ func (node *fuseNode) Setattr(ctx context.Context, f fs.FileHandle, in *fuse.Set
 }
 
 func (node *fuseNode) Write(ctx context.Context, f fs.FileHandle, data []byte, off int64) (written uint32, errno syscall.Errno) {
-	writeCloser, err := node.kdbNode.Open()
+	writeCloser, err := node.kdbNode.Writer(off)
 	if err != nil {
+		// TODO: use Wrap to wrap errors
+		// TODO: add trace to errors
 		node.server.errors <- server.ServerError{
 			Inner:   err,
 			Message: fmt.Sprintf("unable to open for write %v", node.kdbNode.Path),
 		}
 		return 0, syscall.EFAULT
 	}
-	defer writeCloser.Close()
 
 	n, err := writeCloser.Write(data)
-	fmt.Println(err)
 	if err != nil {
+		writeCloser.Close()
 		node.server.errors <- server.ServerError{
 			Inner:   err,
 			Message: fmt.Sprintf("failed to write %v", node.kdbNode.Path),
 		}
 		return 0, syscall.EFAULT
 	}
+
+	err = writeCloser.Close()
+	if err != nil {
+		writeCloser.Close()
+		node.server.errors <- server.ServerError{
+			Inner:   err,
+			Message: fmt.Sprintf("error closing %v", node.kdbNode.Path),
+		}
+		return uint32(n), syscall.EFAULT
+	}
+
 	return uint32(n), fs.OK
 }
 

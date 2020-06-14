@@ -80,13 +80,22 @@ func (entry fsEntry) Children() ([]provider.Entry, error) {
 	return children, nil
 }
 
-func (entry fsEntry) Open() (io.ReadWriteCloser, error) {
+func (entry fsEntry) Reader(off int64) (io.ReadCloser, error) {
 	file, err := os.Open(entry.absolutePath())
 	if err != nil {
 		return nil, provider.ProviderError{
 			Inner:   err,
-			Message: fmt.Sprintf("unable to open %v", entry.absolutePath()),
+			Message: fmt.Sprintf("unable to open for reading %v", entry.absolutePath()),
 		}
 	}
+
+	file.Seek(off, 0)
+	if err != nil {
+		return nil, provider.ProviderError{
+			Inner:   err,
+			Message: fmt.Sprintf("unable to seek %v", entry.absolutePath()),
+		}
+	}
+
 	return file, nil
 }

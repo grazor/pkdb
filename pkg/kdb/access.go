@@ -6,7 +6,32 @@ import (
 	"path/filepath"
 )
 
-func (node *KdbNode) Open() (io.ReadWriteCloser, error) {
+type kdbNodeWriter struct {
+	node *KdbNode
+	io.WriteCloser
+}
+
+func (w kdbNodeWriter) Close() error {
+	err := w.WriteCloser.Close()
+	if err != nil {
+		return KdbError{
+			Inner:   err,
+			Message: fmt.Sprintf("unable to close after writing %v", w.node.Path),
+		}
+	}
+
+	err = w.node.Reload()
+	if err != nil {
+		return KdbError{
+			Inner:   err,
+			Message: fmt.Sprintf("unable to reload node after writing %v", w.node.Path),
+		}
+	}
+
+	return nil
+}
+
+func (node *KdbNode) Reader(off int64) (io.ReadCloser, error) {
 	entry, err := node.Parent.Tree.Provider.Get(node.Path)
 	if err != nil {
 		return nil, KdbError{
@@ -15,14 +40,33 @@ func (node *KdbNode) Open() (io.ReadWriteCloser, error) {
 		}
 	}
 
-	rwcloser, err := entry.Open()
+	reader, err := entry.Reader(off)
 	if err != nil {
 		return nil, KdbError{
 			Inner:   err,
-			Message: fmt.Sprintf("unable to open node for read %v", node.Path),
+			Message: fmt.Sprintf("unable to open node for reading %v", node.Path),
 		}
 	}
-	return rwcloser, nil
+	return reader, nil
+}
+
+func (node *KdbNode) Writer(off int64) (io.WriteCloser, error) {
+	entry, err := node.Parent.Tree.Provider.Get(node.Path)
+	if err != nil {
+		return nil, KdbError{
+			Inner:   err,
+			Message: fmt.Sprintf("unable to get source node for %v", node.Path),
+		}
+	}
+
+	writer, err := entry.Writer(off)
+	if err != nil {
+		return nil, KdbError{
+			Inner:   err,
+			Message: fmt.Sprintf("unable to open node for writing %v", node.Path),
+		}
+	}
+	return kdbNodeWriter{node, writer}, nil
 }
 
 func (node *KdbNode) AddChild(name string, container bool) (newNode *KdbNode, err error) {
