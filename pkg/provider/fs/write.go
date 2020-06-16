@@ -66,8 +66,6 @@ func (entry fsEntry) AddChild(name string, container bool) (provider.Entry, erro
 	return newEntry, nil
 }
 
-func (entry fsEntry) Move() {}
-
 func (entry fsEntry) Delete() error {
 	var err error
 	if entry.fileInfo.IsDir() {
@@ -80,6 +78,26 @@ func (entry fsEntry) Delete() error {
 		return provider.ProviderError{
 			Inner:   err,
 			Message: fmt.Sprintf("unable to delete %v", entry.absolutePath()),
+		}
+	}
+
+	return nil
+}
+
+func (entry fsEntry) Move(targetParent provider.Entry, name string) error {
+	target, ok := targetParent.(fsEntry)
+	if !ok {
+		return provider.ProviderError{
+			Message: "move target is not a fsEntry",
+		}
+	}
+
+	targetName := filepath.Join(target.absolutePath(), name)
+	err := os.Rename(entry.absolutePath(), targetName)
+	if err != nil {
+		return provider.ProviderError{
+			Inner:   err,
+			Message: fmt.Sprintf("failed to move %s to %s", entry.absolutePath(), targetName),
 		}
 	}
 

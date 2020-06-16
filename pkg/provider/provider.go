@@ -32,7 +32,7 @@ type Entry interface {
 	Writer(off int64) (io.WriteCloser, error)
 
 	AddChild(name string, container bool) (Entry, error)
-	Move()
+	Move(targetParent Entry, name string) error
 	Delete() error
 
 	Size() int64

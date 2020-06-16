@@ -133,9 +133,55 @@ func (node *KdbNode) Delete() error {
 
 	}
 
-	if _, ok := node.Parent.children[node.Name]; ok {
-		delete(node.Parent.children, node.Name)
+	delete(node.Parent.Children(), node.Name)
+	return nil
+}
+
+func (node *KdbNode) Move(targetParent *KdbNode, name string) error {
+	sourceProviderNode, err := node.Tree.Provider.Get(node.Path)
+	if err != nil {
+		return KdbError{
+			Inner:   err,
+			Message: fmt.Sprintf("unable to get sourceprovider node %v", node.Path),
+		}
+
 	}
+
+	targetParentNode, err := node.Tree.Provider.Get(targetParent.Path)
+	if err != nil {
+		return KdbError{
+			Inner:   err,
+			Message: fmt.Sprintf("unable to get target parent node %v", targetParent.Path),
+		}
+
+	}
+
+	if targetNode, ok := targetParent.Child(name); ok {
+		// Replacing target node with a new one
+		err = targetNode.Delete()
+		if err != nil {
+			return KdbError{
+				Inner:   err,
+				Message: fmt.Sprintf("unable to delete existing target node %v", targetParent.Path),
+			}
+
+		}
+	}
+
+	err = sourceProviderNode.Move(targetParentNode, name)
+	if err != nil {
+		return KdbError{
+			Inner:   err,
+			Message: "provider move failed",
+		}
+	}
+
+	delete(node.Parent.children, node.Name)
+	node.Parent = targetParent
+	targetParent.Children()[name] = node
+
+	node.Name = name
+	node.Path = filepath.Join(targetParent.Path, node.Name)
 
 	return nil
 }
