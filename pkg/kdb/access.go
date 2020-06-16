@@ -104,3 +104,38 @@ func (node *KdbNode) AddChild(name string, container bool) (newNode *KdbNode, er
 	kdbChildNode := nodeFromProvider(node, childProviderNode)
 	return kdbChildNode, nil
 }
+
+func (node *KdbNode) Delete() error {
+	children := node.Children()
+
+	if len(children) > 0 {
+		return KdbError{
+			Message: fmt.Sprintf("can not delete node with children %s", node),
+		}
+
+	}
+
+	providerNode, err := node.Tree.Provider.Get(node.Path)
+	if err != nil {
+		return KdbError{
+			Inner:   err,
+			Message: fmt.Sprintf("unable to get provider node %v", node.Path),
+		}
+
+	}
+
+	err = providerNode.Delete()
+	if err != nil {
+		return KdbError{
+			Inner:   err,
+			Message: fmt.Sprintf("unable to get delete node %v", node.Path),
+		}
+
+	}
+
+	if _, ok := node.Parent.children[node.Name]; ok {
+		delete(node.Parent.children, node.Name)
+	}
+
+	return nil
+}

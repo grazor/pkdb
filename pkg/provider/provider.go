@@ -33,7 +33,7 @@ type Entry interface {
 
 	AddChild(name string, container bool) (Entry, error)
 	Move()
-	Delete()
+	Delete() error
 
 	Size() int64
 	Time() time.Time

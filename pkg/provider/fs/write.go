@@ -5,6 +5,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"syscall"
 
 	"github.com/grazor/pkdb/pkg/provider"
 )
@@ -65,5 +66,22 @@ func (entry fsEntry) AddChild(name string, container bool) (provider.Entry, erro
 	return newEntry, nil
 }
 
-func (entry fsEntry) Move()   {}
-func (entry fsEntry) Delete() {}
+func (entry fsEntry) Move() {}
+
+func (entry fsEntry) Delete() error {
+	var err error
+	if entry.fileInfo.IsDir() {
+		err = syscall.Rmdir(entry.absolutePath())
+	} else {
+		err = syscall.Unlink(entry.absolutePath())
+	}
+
+	if err != nil {
+		return provider.ProviderError{
+			Inner:   err,
+			Message: fmt.Sprintf("unable to delete %v", entry.absolutePath()),
+		}
+	}
+
+	return nil
+}
