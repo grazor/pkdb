@@ -58,17 +58,3 @@ func (node *fuseNode) Lookup(ctx context.Context, name string, out *fuse.EntryOu
 func (node *fuseNode) Opendir(ctx context.Context) syscall.Errno {
 	return fs.OK
 }
-
-func (node *fuseNode) Getattr(ctx context.Context, f fs.FileHandle, out *fuse.AttrOut) syscall.Errno {
-	time := uint64(node.kdbNode.Time.Unix())
-	out.Mode = fuse.S_IFDIR | dirMode
-	out.Atime, out.Mtime, out.Ctime = time, time, time
-	if !node.kdbNode.HasChildren {
-		out.Mode = fileMode | fuse.S_IFREG
-		out.Size = uint64(node.kdbNode.Size)
-		out.Nlink = 1
-	}
-	out.Owner = fuse.Owner{Uid: 1000, Gid: 100}
-
-	return fs.OK
-}
