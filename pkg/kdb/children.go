@@ -89,6 +89,7 @@ func (node *KdbNode) Reload() error {
 
 func nodeFromProvider(parent *KdbNode, entry provider.Entry) *KdbNode {
 	node := &KdbNode{
+		NodeIndex:   parent.Tree.nextIndex(),
 		ID:          entry.ID(),
 		Name:        entry.Name(),
 		Path:        entry.Path(),

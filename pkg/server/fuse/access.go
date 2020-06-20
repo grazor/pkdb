@@ -12,9 +12,13 @@ import (
 
 var _ fs.NodeCreater = (*fuseNode)(nil)
 var _ fs.NodeMkdirer = (*fuseNode)(nil)
-var _ fs.NodeUnlinker = (*fuseNode)(nil)
-var _ fs.NodeRmdirer = (*fuseNode)(nil)
+var _ fs.NodeOpener = (*fuseNode)(nil)
 var _ fs.NodeRenamer = (*fuseNode)(nil)
+var _ fs.NodeRmdirer = (*fuseNode)(nil)
+var _ fs.NodeUnlinker = (*fuseNode)(nil)
+var _ fs.NodeGetxattrer = (*fuseNode)(nil)
+var _ fs.NodeSetattrer = (*fuseNode)(nil)
+var _ fs.NodeLinker = (*fuseNode)(nil)
 
 func (node *fuseNode) Create(ctx context.Context, name string, flags uint32, mode uint32, out *fuse.EntryOut) (newNode *fs.Inode, fh fs.FileHandle, fuseFlags uint32, errno syscall.Errno) {
 	kdbChild, err := node.kdbNode.AddChild(name, false)
@@ -34,8 +38,8 @@ func (node *fuseNode) Create(ctx context.Context, name string, flags uint32, mod
 	}
 
 	embedder := &fuseNode{server: node.server, kdbNode: kdbChild}
-	newNode = node.NewInode(ctx, embedder, fs.StableAttr{Mode: childMode})
-	return newNode, newFuseHandle(kdbChild), 0, fs.OK
+	newNode = node.NewInode(ctx, embedder, fs.StableAttr{Mode: childMode, Ino: kdbChild.NodeIndex})
+	return newNode, newFuseHandle(kdbChild, node.server, flags), 0, fs.OK
 }
 
 func (node *fuseNode) Mkdir(ctx context.Context, name string, mode uint32, out *fuse.EntryOut) (*fs.Inode, syscall.Errno) {
@@ -54,7 +58,7 @@ func (node *fuseNode) Mkdir(ctx context.Context, name string, mode uint32, out *
 	}
 
 	embedder := &fuseNode{server: node.server, kdbNode: kdbChild}
-	newNode := node.NewInode(ctx, embedder, fs.StableAttr{Mode: childMode})
+	newNode := node.NewInode(ctx, embedder, fs.StableAttr{Mode: childMode, Ino: kdbChild.NodeIndex})
 	return newNode, fs.OK
 }
 
@@ -126,4 +130,33 @@ func (node *fuseNode) Rename(ctx context.Context, name string, newParent fs.Inod
 	}
 
 	return fs.OK
+}
+
+func (node *fuseNode) Open(ctx context.Context, flags uint32) (fh fs.FileHandle, fuseFlags uint32, errno syscall.Errno) {
+	if node.kdbNode.HasChildren {
+		return nil, 0, syscall.ENOTSUP
+	}
+	return newFuseHandle(node.kdbNode, node.server, flags), 0, fs.OK
+}
+
+func (node *fuseNode) Getxattr(ctx context.Context, attr string, dest []byte) (uint32, syscall.Errno) {
+	return 0, syscall.ENODATA
+}
+
+func (node *fuseNode) Setattr(ctx context.Context, f fs.FileHandle, in *fuse.SetAttrIn, out *fuse.AttrOut) syscall.Errno {
+	return setattr(ctx, node.kdbNode, in, out)
+}
+
+func (node *fuseNode) Link(ctx context.Context, target fs.InodeEmbedder, name string, out *fuse.EntryOut) (newNode *fs.Inode, errno syscall.Errno) {
+	targetNode, ok := node.kdbNode.Child(name)
+	if !ok {
+		node.server.errors <- server.ServerError{
+			Message: fmt.Sprintf("linking node does not exist %v %v", node, name),
+		}
+		return nil, syscall.ENOENT
+	}
+
+	embedder := &fuseNode{server: node.server, kdbNode: targetNode}
+	newNode = node.NewInode(ctx, embedder, fs.StableAttr{Mode: target.EmbeddedInode().StableAttr().Mode, Ino: targetNode.NodeIndex})
+	return newNode, fs.OK
 }

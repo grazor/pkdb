@@ -40,5 +40,6 @@ func (prov *fsProvider) Get(relativePath string) (provider.Entry, error) {
 		relativePath: relativePath,
 		fileInfo:     info,
 	}
+
 	return entry, nil
 }

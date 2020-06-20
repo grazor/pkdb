@@ -2,6 +2,7 @@
 package kdb
 
 import (
+	"sync"
 	"time"
 
 	"github.com/grazor/pkdb/pkg/provider"
@@ -19,12 +20,16 @@ func (err KdbError) Error() string {
 type KdbTree struct {
 	Provider provider.Provider
 
+	mu          sync.Mutex
+	nodeCounter uint64
+
 	Root   *KdbNode
 	errors chan error
 }
 
 type KdbNode struct {
 	ID          string
+	NodeIndex   uint64
 	Name        string
 	HasChildren bool
 	Attrs       map[string]interface{}
@@ -45,12 +50,14 @@ func New(provider provider.Provider) *KdbTree {
 		Name:        "root",
 		Path:        "",
 		HasChildren: true,
+		NodeIndex:   1,
 	}
 
 	tree := &KdbTree{
-		Provider: provider,
-		Root:     root,
-		errors:   errors,
+		Provider:    provider,
+		Root:        root,
+		errors:      errors,
+		nodeCounter: 1,
 	}
 
 	root.Tree = tree
@@ -63,4 +70,12 @@ func (tree *KdbTree) Errors() <-chan error {
 
 func (tree *KdbTree) Close() {
 	close(tree.errors)
+}
+
+func (tree *KdbTree) nextIndex() uint64 {
+	tree.mu.Lock()
+	defer tree.mu.Unlock()
+	tree.nodeCounter += 1
+	index := tree.nodeCounter
+	return index
 }

@@ -52,7 +52,7 @@ func (node *fuseNode) Lookup(ctx context.Context, name string, out *fuse.EntryOu
 	out.Owner = fuse.Owner{Uid: 1000, Gid: 100}
 
 	embedder := &fuseNode{server: node.server, kdbNode: n}
-	return node.NewInode(ctx, embedder, fs.StableAttr{Mode: out.Mode}), fs.OK
+	return node.NewInode(ctx, embedder, fs.StableAttr{Mode: out.Mode, Ino: n.NodeIndex}), fs.OK
 }
 
 func (node *fuseNode) Opendir(ctx context.Context) syscall.Errno {

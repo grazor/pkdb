@@ -91,6 +91,7 @@ func (fserver *fuseServer) Serve(ctx context.Context, wg *sync.WaitGroup, tree *
 		MountOptions: fuse.MountOptions{
 			Name:   "pkdb",
 			FsName: "pkdb",
+			Debug:  true,
 		},
 	})
 	if err != nil {
