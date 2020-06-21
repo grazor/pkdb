@@ -15,6 +15,7 @@ var _ fs.NodeMkdirer = (*fuseNode)(nil)
 var _ fs.NodeOpener = (*fuseNode)(nil)
 var _ fs.NodeRenamer = (*fuseNode)(nil)
 var _ fs.NodeRmdirer = (*fuseNode)(nil)
+var _ fs.NodeGetattrer = (*fuseNode)(nil)
 var _ fs.NodeUnlinker = (*fuseNode)(nil)
 var _ fs.NodeGetxattrer = (*fuseNode)(nil)
 var _ fs.NodeSetattrer = (*fuseNode)(nil)
@@ -143,8 +144,12 @@ func (node *fuseNode) Getxattr(ctx context.Context, attr string, dest []byte) (u
 	return 0, syscall.ENODATA
 }
 
+func (node *fuseNode) Getattr(ctx context.Context, f fs.FileHandle, out *fuse.AttrOut) syscall.Errno {
+	return getattr(ctx, node.kdbNode, node.server, out)
+}
+
 func (node *fuseNode) Setattr(ctx context.Context, f fs.FileHandle, in *fuse.SetAttrIn, out *fuse.AttrOut) syscall.Errno {
-	return setattr(ctx, node.kdbNode, node.server, in, out)
+	return getattr(ctx, node.kdbNode, node.server, out)
 }
 
 func (node *fuseNode) Link(ctx context.Context, target fs.InodeEmbedder, name string, out *fuse.EntryOut) (newNode *fs.Inode, errno syscall.Errno) {

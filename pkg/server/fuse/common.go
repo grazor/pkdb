@@ -9,7 +9,7 @@ import (
 	"github.com/hanwen/go-fuse/v2/fuse"
 )
 
-func setattr(ctx context.Context, node *kdb.KdbNode, server *fuseServer, in *fuse.SetAttrIn, out *fuse.AttrOut) syscall.Errno {
+func getattr(ctx context.Context, node *kdb.KdbNode, server *fuseServer, out *fuse.AttrOut) syscall.Errno {
 	//TODO: support touch -m
 	time := node.Time
 	out.Mode = fuse.S_IFDIR | server.dirMode
