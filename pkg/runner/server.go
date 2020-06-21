@@ -25,7 +25,8 @@ func NewServer(URI string) (server.Server, error) {
 	switch u.Scheme {
 	case "", "file":
 		{
-			server, err := fuse.New(u.Hostname() + u.Path)
+			var options map[string][]string = u.Query()
+			server, err := fuse.New(u.Hostname()+u.Path, options)
 			if err != nil {
 				return nil, RunnerError{
 					Inner:   err,

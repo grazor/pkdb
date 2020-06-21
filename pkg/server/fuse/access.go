@@ -32,9 +32,9 @@ func (node *fuseNode) Create(ctx context.Context, name string, flags uint32, mod
 		return nil, nil, 0, syscall.EFAULT
 	}
 
-	var childMode uint32 = fuse.S_IFDIR | dirMode
+	var childMode uint32 = fuse.S_IFDIR | node.server.dirMode
 	if !kdbChild.HasChildren {
-		childMode = fuse.S_IFREG | fileMode
+		childMode = fuse.S_IFREG | node.server.fileMode
 	}
 
 	embedder := &fuseNode{server: node.server, kdbNode: kdbChild}
@@ -52,9 +52,9 @@ func (node *fuseNode) Mkdir(ctx context.Context, name string, mode uint32, out *
 		return nil, syscall.EFAULT
 	}
 
-	var childMode uint32 = fuse.S_IFDIR | dirMode
+	var childMode uint32 = fuse.S_IFDIR | node.server.dirMode
 	if !kdbChild.HasChildren {
-		childMode = fuse.S_IFREG | fileMode
+		childMode = fuse.S_IFREG | node.server.fileMode
 	}
 
 	embedder := &fuseNode{server: node.server, kdbNode: kdbChild}
@@ -144,7 +144,7 @@ func (node *fuseNode) Getxattr(ctx context.Context, attr string, dest []byte) (u
 }
 
 func (node *fuseNode) Setattr(ctx context.Context, f fs.FileHandle, in *fuse.SetAttrIn, out *fuse.AttrOut) syscall.Errno {
-	return setattr(ctx, node.kdbNode, in, out)
+	return setattr(ctx, node.kdbNode, node.server, in, out)
 }
 
 func (node *fuseNode) Link(ctx context.Context, target fs.InodeEmbedder, name string, out *fuse.EntryOut) (newNode *fs.Inode, errno syscall.Errno) {

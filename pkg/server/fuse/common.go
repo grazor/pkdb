@@ -9,17 +9,17 @@ import (
 	"github.com/hanwen/go-fuse/v2/fuse"
 )
 
-func setattr(ctx context.Context, node *kdb.KdbNode, in *fuse.SetAttrIn, out *fuse.AttrOut) syscall.Errno {
+func setattr(ctx context.Context, node *kdb.KdbNode, server *fuseServer, in *fuse.SetAttrIn, out *fuse.AttrOut) syscall.Errno {
 	//TODO: support touch -m
 	time := node.Time
-	out.Mode = fuse.S_IFDIR | dirMode
+	out.Mode = fuse.S_IFDIR | server.dirMode
 	out.SetTimes(&time, &time, &time)
 	if !node.HasChildren {
-		out.Mode = fuse.S_IFREG | fileMode
+		out.Mode = fuse.S_IFREG | server.fileMode
 		out.Size = uint64(node.Size)
 		out.Nlink = 1
 	}
-	out.Owner = fuse.Owner{Uid: 1000, Gid: 100}
+	out.Owner = fuse.Owner{Uid: server.userID, Gid: server.groupID}
 	return fs.OK
 
 }

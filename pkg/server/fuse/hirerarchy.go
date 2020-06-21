@@ -14,11 +14,6 @@ var _ fs.NodeReaddirer = (*fuseNode)(nil)
 var _ fs.NodeLookuper = (*fuseNode)(nil)
 var _ fs.NodeOpendirer = (*fuseNode)(nil)
 
-const (
-	fileMode = 0660
-	dirMode  = 0751
-)
-
 func (node *fuseNode) Statfs(ctx context.Context, out *fuse.StatfsOut) syscall.Errno {
 	out.Files = uint64(len(node.Children()))
 	return fs.OK
@@ -29,7 +24,7 @@ func (node *fuseNode) Readdir(ctx context.Context) (fs.DirStream, syscall.Errno)
 	entries := make([]fuse.DirEntry, len(children))
 	i := 0
 	for _, child := range children {
-		entries[i] = fuse.DirEntry{Mode: dirMode | fuse.S_IFDIR, Name: child.Name, Ino: 0}
+		entries[i] = fuse.DirEntry{Mode: node.server.dirMode | fuse.S_IFDIR, Name: child.Name, Ino: 0}
 		i++
 	}
 	return fs.NewListDirStream(entries), fs.OK
@@ -42,14 +37,14 @@ func (node *fuseNode) Lookup(ctx context.Context, name string, out *fuse.EntryOu
 	}
 
 	time := uint64(node.kdbNode.Time.Unix())
-	out.Mode = fuse.S_IFDIR | dirMode
+	out.Mode = fuse.S_IFDIR | node.server.dirMode
 	out.Atime, out.Mtime, out.Ctime = time, time, time
 	if !n.HasChildren {
-		out.Mode = fuse.S_IFREG | fileMode
+		out.Mode = fuse.S_IFREG | node.server.fileMode
 		out.Size = uint64(n.Size)
 		out.Nlink = 1
 	}
-	out.Owner = fuse.Owner{Uid: 1000, Gid: 100}
+	out.Owner = fuse.Owner{Uid: node.server.userID, Gid: node.server.groupID}
 
 	embedder := &fuseNode{server: node.server, kdbNode: n}
 	return node.NewInode(ctx, embedder, fs.StableAttr{Mode: out.Mode, Ino: n.NodeIndex}), fs.OK
