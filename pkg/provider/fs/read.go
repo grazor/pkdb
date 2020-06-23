@@ -5,6 +5,7 @@ import (
 	"io"
 	"os"
 	"path/filepath"
+	"strings"
 	"time"
 
 	"github.com/grazor/pkdb/pkg/provider"
@@ -70,9 +71,24 @@ func (entry fsEntry) Children() ([]provider.Entry, error) {
 
 	children := make([]provider.Entry, 0, len(dirContents))
 	for _, childInfo := range dirContents {
+		name := childInfo.Name()
+		ext := strings.ToLower(filepath.Ext(name))
+		rest := strings.TrimSuffix(name, ext)
+		if ext == ".yml" || ext == ".yaml" {
+			if rest == "" {
+				// This file contains metadata for current dir
+				continue
+			}
+			restPath := filepath.Join(entry.absolutePath(), rest)
+			if _, err := os.Stat(restPath); err == nil {
+				// This file contains metadata for file named `rest`
+				continue
+			}
+		}
+
 		child := fsEntry{
 			provider:     entry.provider,
-			relativePath: filepath.Join(entry.relativePath, childInfo.Name()),
+			relativePath: filepath.Join(entry.relativePath, name),
 			fileInfo:     childInfo,
 		}
 		children = append(children, child)

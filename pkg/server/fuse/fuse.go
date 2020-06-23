@@ -20,6 +20,7 @@ type fuseServer struct {
 	mountpointCreated bool
 	userID, groupID   uint32
 	fileMode, dirMode uint32
+	metaSuffix        string
 
 	tree     *kdb.KdbTree
 	fuseRoot *fuseNode
@@ -29,8 +30,9 @@ type fuseServer struct {
 
 type fuseNode struct {
 	fs.Inode
-	server  *fuseServer
-	kdbNode *kdb.KdbNode
+	server         *fuseServer
+	kdbNode        *kdb.KdbNode
+	isMetadataNode bool
 }
 
 const (
@@ -73,6 +75,7 @@ func New(mountPoint string, options map[string][]string) (*fuseServer, error) {
 		errors:            make(chan error),
 		fileMode:          defaultFileMode,
 		dirMode:           defaultDirMode,
+		metaSuffix:        ".yml",
 	}
 	err = serv.configure(options)
 	if err != nil {
