@@ -118,7 +118,7 @@ func (handle *fuseHandle) Fsync(ctx context.Context, flags uint32) syscall.Errno
 }
 
 func (handle *fuseHandle) Getattr(ctx context.Context, out *fuse.AttrOut) syscall.Errno {
-	return getattr(ctx, handle.kdbNode, handle.server, out)
+	return getattr(ctx, handle.kdbNode, false, handle.server, out)
 }
 
 func (handle *fuseHandle) Lseek(ctx context.Context, off uint64, whence uint32) (uint64, syscall.Errno) {
@@ -155,7 +155,7 @@ func (handle *fuseHandle) Release(ctx context.Context) syscall.Errno {
 }
 
 func (handle *fuseHandle) Setattr(ctx context.Context, in *fuse.SetAttrIn, out *fuse.AttrOut) syscall.Errno {
-	return getattr(ctx, handle.kdbNode, handle.server, out)
+	return getattr(ctx, handle.kdbNode, false, handle.server, out)
 }
 
 func (handle *fuseHandle) Write(ctx context.Context, data []byte, off int64) (written uint32, errno syscall.Errno) {

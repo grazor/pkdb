@@ -145,11 +145,11 @@ func (node *fuseNode) Getxattr(ctx context.Context, attr string, dest []byte) (u
 }
 
 func (node *fuseNode) Getattr(ctx context.Context, f fs.FileHandle, out *fuse.AttrOut) syscall.Errno {
-	return getattr(ctx, node.kdbNode, node.server, out)
+	return getattr(ctx, node.kdbNode, node.isMetadataNode, node.server, out)
 }
 
 func (node *fuseNode) Setattr(ctx context.Context, f fs.FileHandle, in *fuse.SetAttrIn, out *fuse.AttrOut) syscall.Errno {
-	return getattr(ctx, node.kdbNode, node.server, out)
+	return getattr(ctx, node.kdbNode, node.isMetadataNode, node.server, out)
 }
 
 func (node *fuseNode) Link(ctx context.Context, target fs.InodeEmbedder, name string, out *fuse.EntryOut) (newNode *fs.Inode, errno syscall.Errno) {

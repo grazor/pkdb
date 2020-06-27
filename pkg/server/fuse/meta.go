@@ -4,13 +4,13 @@ import (
 	"bytes"
 	"context"
 	"fmt"
-	"io"
 	"syscall"
 
 	"github.com/grazor/pkdb/pkg/kdb"
 	"github.com/grazor/pkdb/pkg/server"
 	"github.com/hanwen/go-fuse/v2/fs"
 	"github.com/hanwen/go-fuse/v2/fuse"
+	"gopkg.in/yaml.v2"
 )
 
 func newMetaHandle(node *kdb.KdbNode, serv *fuseServer, flags uint32) fs.FileHandle {
@@ -19,31 +19,21 @@ func newMetaHandle(node *kdb.KdbNode, serv *fuseServer, flags uint32) fs.FileHan
 		wSize = 0
 	}
 
-	buf := make([]byte, node.Size)
 	handle := &FuseMetaHandle{kdbNode: node, server: serv}
+	nodeMetaDump, err := yaml.Marshal(node.Meta())
+	if err != nil {
+		serv.errors <- server.ServerError{
+			Inner:   err,
+			Message: fmt.Sprintf("unable to dump meta for %v", node),
+		}
+	}
 
-	// TODO: handle O_RDONLY == 0x0
 	if flags&syscall.O_RDONLY == syscall.O_RDONLY || flags&syscall.O_RDWR == syscall.O_RDWR {
-		reader, err := node.Reader(0)
-		if err != nil {
-			serv.errors <- server.ServerError{
-				Inner:   err,
-				Message: fmt.Sprintf("unable to open node for read %v", node),
-			}
-		}
-		defer reader.Close()
-
-		if _, err := reader.Read(buf); err != nil && err != io.EOF {
-			serv.errors <- server.ServerError{
-				Inner:   err,
-				Message: fmt.Sprintf("unable to read %v", node),
-			}
-		}
-		handle.reader = bytes.NewReader(buf)
+		handle.reader = bytes.NewReader(nodeMetaDump)
 	}
 
 	if flags&syscall.O_APPEND == syscall.O_APPEND {
-		handle.writer = bytes.NewBuffer(buf)
+		handle.writer = bytes.NewBuffer(nodeMetaDump)
 	} else if flags&syscall.O_WRONLY == syscall.O_WRONLY || flags&syscall.O_RDWR == syscall.O_RDWR {
 		handle.writer = bytes.NewBuffer(make([]byte, wSize))
 	}
@@ -112,7 +102,7 @@ func (handle *FuseMetaHandle) Fsync(ctx context.Context, flags uint32) syscall.E
 }
 
 func (handle *FuseMetaHandle) Getattr(ctx context.Context, out *fuse.AttrOut) syscall.Errno {
-	return getattr(ctx, handle.kdbNode, handle.server, out)
+	return getattr(ctx, handle.kdbNode, true, handle.server, out)
 }
 
 func (handle *FuseMetaHandle) Lseek(ctx context.Context, off uint64, whence uint32) (uint64, syscall.Errno) {
@@ -149,7 +139,7 @@ func (handle *FuseMetaHandle) Release(ctx context.Context) syscall.Errno {
 }
 
 func (handle *FuseMetaHandle) Setattr(ctx context.Context, in *fuse.SetAttrIn, out *fuse.AttrOut) syscall.Errno {
-	return getattr(ctx, handle.kdbNode, handle.server, out)
+	return getattr(ctx, handle.kdbNode, true, handle.server, out)
 }
 
 func (handle *FuseMetaHandle) Write(ctx context.Context, data []byte, off int64) (written uint32, errno syscall.Errno) {
@@ -171,4 +161,3 @@ func (handle *FuseMetaHandle) Write(ctx context.Context, data []byte, off int64)
 	}
 	return uint32(n), fs.OK
 }
-
