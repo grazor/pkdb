@@ -35,6 +35,9 @@ type fuseNode struct {
 	isMetadataNode bool
 }
 
+type fuseKdbNode *fuseNode
+type fuseMetaNode *fuseNode
+
 const (
 	defaultFileMode = 0660
 	defaultDirMode  = 0751

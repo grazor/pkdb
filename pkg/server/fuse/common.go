@@ -48,3 +48,10 @@ func ino(node *kdb.KdbNode, metadata bool) (ino uint64) {
 	}
 	return ino
 }
+
+func newHandle(node *kdb.KdbNode, meta bool, serv *fuseServer, flags uint32) fs.FileHandle {
+	if meta {
+		return newFuseHandle(node, serv, flags)
+	}
+	return newMetaHandle(node, serv, flags)
+}

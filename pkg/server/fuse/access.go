@@ -134,10 +134,10 @@ func (node *fuseNode) Rename(ctx context.Context, name string, newParent fs.Inod
 }
 
 func (node *fuseNode) Open(ctx context.Context, flags uint32) (fh fs.FileHandle, fuseFlags uint32, errno syscall.Errno) {
-	if node.kdbNode.HasChildren {
+	if node.kdbNode.HasChildren && !node.isMetadataNode {
 		return nil, 0, syscall.ENOTSUP
 	}
-	return newFuseHandle(node.kdbNode, node.server, flags), 0, fs.OK
+	return newHandle(node.kdbNode, node.isMetadataNode, node.server, flags), 0, fs.OK
 }
 
 func (node *fuseNode) Getxattr(ctx context.Context, attr string, dest []byte) (uint32, syscall.Errno) {

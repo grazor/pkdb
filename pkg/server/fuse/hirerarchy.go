@@ -39,6 +39,10 @@ func (node *fuseNode) Readdir(ctx context.Context) (fs.DirStream, syscall.Errno)
 }
 
 func (node *fuseNode) Lookup(ctx context.Context, name string, out *fuse.EntryOut) (*fs.Inode, syscall.Errno) {
+	if node.isMetadataNode {
+		return nil, syscall.ENOENT
+	}
+
 	n, meta, ok := childOrMeta(node.kdbNode, name, node.server.metaSuffix)
 	if !ok {
 		return nil, syscall.ENOENT
@@ -47,7 +51,7 @@ func (node *fuseNode) Lookup(ctx context.Context, name string, out *fuse.EntryOu
 	time := uint64(node.kdbNode.Time.Unix())
 	out.Mode = fuse.S_IFDIR | node.server.dirMode
 	out.Atime, out.Mtime, out.Ctime = time, time, time
-	if !n.HasChildren {
+	if !n.HasChildren || meta {
 		out.Mode = fuse.S_IFREG | node.server.fileMode
 		out.Size = uint64(n.Size)
 		out.Nlink = 1
