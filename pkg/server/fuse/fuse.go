@@ -185,7 +185,6 @@ func (fserver *fuseServer) configure(options map[string][]string) error {
 		fserver.dirMode = uint32(dirMode)
 	}
 
-	fmt.Printf("%#o %#o\n", fserver.fileMode, fserver.dirMode)
 	return nil
 }
 

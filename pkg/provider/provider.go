@@ -31,6 +31,9 @@ type Entry interface {
 	Reader(off int64) (io.ReadCloser, error)
 	Writer(off int64) (io.WriteCloser, error)
 
+	Meta() (map[string]interface{}, error)
+	SetMeta(map[string]interface{}) error
+
 	AddChild(name string, container bool) (Entry, error)
 	Move(targetParent Entry, name string) error
 	Delete() error

@@ -20,7 +20,15 @@ func newMetaHandle(node *kdb.KdbNode, serv *fuseServer, flags uint32) fs.FileHan
 	}
 
 	handle := &FuseMetaHandle{kdbNode: node, server: serv}
-	nodeMetaDump, err := yaml.Marshal(node.Meta())
+	meta, err := node.Meta()
+	if err != nil {
+		serv.errors <- server.ServerError{
+			Inner:   err,
+			Message: fmt.Sprintf("unable to get meta for %v", node),
+		}
+	}
+
+	nodeMetaDump, err := yaml.Marshal(meta)
 	if err != nil {
 		serv.errors <- server.ServerError{
 			Inner:   err,
@@ -151,13 +159,14 @@ func (handle *FuseMetaHandle) Write(ctx context.Context, data []byte, off int64)
 		return 0, syscall.EFAULT
 	}
 
-	n, err := handle.writer.Write(data)
-	if err != nil {
+	meta := make(map[string]interface{})
+	err := yaml.Unmarshal(data, &meta)
+	if err == nil {
 		handle.server.errors <- server.ServerError{
-			Inner:   err,
-			Message: fmt.Sprintf("write failed for %s", handle.kdbNode),
+			Message: fmt.Sprintf("failed to parse yaml for %v", handle.kdbNode),
 		}
 		return 0, syscall.EFAULT
 	}
-	return uint32(n), fs.OK
+
+	return uint32(len(data)), fs.OK
 }
