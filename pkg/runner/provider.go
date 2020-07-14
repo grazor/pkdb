@@ -33,4 +33,3 @@ func NewProvider(URI string) (provider.Provider, error) {
 
 	return nil, RunnerError{Message: fmt.Sprintf("unsupported provider scheme %v", u.Scheme)}
 }
-

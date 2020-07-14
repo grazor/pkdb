@@ -34,14 +34,27 @@ func getMetaAttr(ctx context.Context, node *kdb.KdbNode, serv *fuseServer, out *
 	out.Mode = fuse.S_IFREG | serv.fileMode
 	out.Nlink = 1
 
-	nodeMetaDump, err := yaml.Marshal(node.Meta())
+	nodeMeta, err := node.Meta()
 	if err != nil {
 		serv.errors <- server.ServerError{
 			Inner:   err,
-			Message: fmt.Sprintf("unable to dump meta for %v", node),
+			Message: fmt.Sprintf("unable to get meta for %v", node),
 		}
 	}
-	out.Size = uint64(len([]byte(nodeMetaDump)))
+
+	if nodeMeta == nil {
+		out.Size = 0
+	} else {
+
+		nodeMetaDump, err := yaml.Marshal(nodeMeta)
+		if err != nil {
+			serv.errors <- server.ServerError{
+				Inner:   err,
+				Message: fmt.Sprintf("unable to dump meta for %v", node),
+			}
+		}
+		out.Size = uint64(len([]byte(nodeMetaDump)))
+	}
 
 	out.Owner = fuse.Owner{Uid: serv.userID, Gid: serv.groupID}
 	return fs.OK

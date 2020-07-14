@@ -13,9 +13,19 @@ import (
 func (entry fsEntry) metaAbsolutePath() (string, bool) {
 	var path string
 
-	path = filepath.Join(entry.absolutePath(), ".yml")
+	absPath := entry.absolutePath()
+	if entry.fileInfo.IsDir() {
+		path = filepath.Join(absPath, ".yml")
+	} else {
+		path = absPath + ".yml"
+	}
 	if _, err := os.Stat(path); os.IsNotExist(err) {
-		path = filepath.Join(entry.absolutePath(), ".yaml")
+		if entry.fileInfo.IsDir() {
+			path = filepath.Join(absPath, ".yaml")
+
+		} else {
+			path = absPath + ".yaml"
+		}
 	}
 
 	exists := true
