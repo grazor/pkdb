@@ -67,8 +67,12 @@ func (prov *fsProvider) Plugins() []string {
 	p := prov.config["plugins"]
 
 	switch data := p.(type) {
-	case []string:
-		return data
+	case []interface{}:
+		plugins := make([]string, 0, len(data))
+		for _, p := range data {
+			plugins = append(plugins, fmt.Sprint(p))
+		}
+		return plugins
 
 	case map[string]interface{}:
 		plugins := make([]string, 0, len(data))
@@ -86,6 +90,7 @@ func (prov *fsProvider) configure() error {
 
 	if _, err := os.Stat(configPath); os.IsNotExist(err) {
 		prov.config = make(map[string]interface{})
+		return nil
 	} else if err != nil {
 		return provider.ProviderError{
 			Inner:   err,

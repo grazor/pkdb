@@ -34,7 +34,26 @@ func (node *KdbNode) SetMeta(meta map[string]interface{}) error {
 	if err != nil {
 		return KdbError{
 			Inner:   err,
-			Message: fmt.Sprintf("unable to get metadata for %v", node.Path),
+			Message: fmt.Sprintf("unable to set metadata for %v", node.Path),
+		}
+	}
+	return nil
+}
+
+func (node *KdbNode) UpdateMeta(meta map[string]interface{}) error {
+	entry, err := node.Parent.Tree.Provider.Get(node.Path)
+	if err != nil {
+		return KdbError{
+			Inner:   err,
+			Message: fmt.Sprintf("unable to get source node for %v", node.Path),
+		}
+	}
+
+	err = entry.UpdateMeta(meta)
+	if err != nil {
+		return KdbError{
+			Inner:   err,
+			Message: fmt.Sprintf("unable to update metadata for %v", node.Path),
 		}
 	}
 	return nil

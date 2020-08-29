@@ -76,8 +76,6 @@ func (g serversGroup) Serve(ctx context.Context, tree *kdb.KdbTree) (<-chan erro
 					Message: msg,
 					Source:  serv.String(),
 				}:
-					continue
-
 				}
 
 			}

@@ -61,7 +61,7 @@ func (entry fsEntry) Meta() (map[string]interface{}, error) {
 	return meta, nil
 }
 
-func (entry fsEntry) UpdateMete(data map[string]interface{}) error {
+func (entry fsEntry) UpdateMeta(data map[string]interface{}) error {
 	return provider.ProviderError{
 		Inner:   nil,
 		Message: "UpdateMeta is not yet implemented",

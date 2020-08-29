@@ -82,6 +82,7 @@ func (node *KdbNode) Reload() error {
 	node.Path = entry.Path()
 	node.Size = entry.Size()
 	node.Time = entry.Time()
+	node.MIME = entry.MIME()
 	node.HasChildren = entry.HasChildren()
 	node.Attrs = entry.Attrs()
 	return nil
@@ -95,6 +96,7 @@ func nodeFromProvider(parent *KdbNode, entry provider.Entry) *KdbNode {
 		Path:        entry.Path(),
 		Size:        entry.Size(),
 		Time:        entry.Time(),
+		MIME:        entry.MIME(),
 		HasChildren: entry.HasChildren(),
 		Attrs:       entry.Attrs(),
 	}

@@ -9,10 +9,21 @@ import (
 	"time"
 
 	"github.com/grazor/pkdb/pkg/provider"
+	"github.com/h2non/filetype"
 )
+
+func init() {
+	filetype.AddType(".md", "text/markdown")
+	filetype.AddType(".yml", "application/x-yaml")
+	filetype.AddType(".yaml", "application/x-yaml")
+}
 
 func (entry fsEntry) absolutePath() string {
 	return filepath.Join(entry.provider.basePath, entry.relativePath)
+}
+
+func (entry fsEntry) ext() string {
+	return filepath.Ext(entry.relativePath)
 }
 
 func (entry fsEntry) ID() string {
@@ -41,6 +52,14 @@ func (entry fsEntry) Size() int64 {
 
 func (entry fsEntry) Time() time.Time {
 	return entry.fileInfo.ModTime()
+}
+
+func (entry fsEntry) MIME() string {
+	if entry.HasChildren() {
+		return ""
+	}
+	m := filetype.GetType(entry.ext())
+	return m.MIME.Value
 }
 
 func (entry fsEntry) HasChildren() bool {

@@ -42,4 +42,5 @@ type Entry interface {
 
 	Size() int64
 	Time() time.Time
+	MIME() string
 }

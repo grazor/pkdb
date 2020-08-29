@@ -31,6 +31,15 @@ func Serve(ctx context.Context, providerURI string, serverURIs ...string) (*sync
 	}
 
 	kdbTree := kdb.New(provider)
+	go func(errors <-chan error) {
+		for err := range errors {
+			msg := "Unexpected kdb error occurred"
+			if _, ok := err.(kdb.KdbError); ok {
+				msg = err.Error()
+			}
+			handleError(err, msg)
+		}
+	}(kdbTree.Errors())
 
 	err = ConfigurePlugins(kdbTree)
 	if err != nil {

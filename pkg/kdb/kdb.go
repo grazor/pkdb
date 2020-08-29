@@ -3,9 +3,7 @@ package kdb
 
 import (
 	"sync"
-	"time"
 
-	"github.com/grazor/pkdb/pkg/kdbplugin"
 	"github.com/grazor/pkdb/pkg/provider"
 )
 
@@ -20,30 +18,13 @@ func (err KdbError) Error() string {
 
 type KdbTree struct {
 	Provider provider.Provider
-	Plugins  []kdbplugin.KdbPlugin
+	Plugins  []KdbPlugin
 
 	mu          sync.Mutex
 	nodeCounter uint64
 
 	Root   *KdbNode
 	errors chan error
-}
-
-type KdbNode struct {
-	ID          string
-	NodeIndex   uint64
-	Name        string
-	HasChildren bool
-	Attrs       map[string]interface{}
-
-	Path string
-	Size int64
-	Time time.Time
-
-	Parent   *KdbNode
-	children map[string]*KdbNode
-
-	Tree *KdbTree
 }
 
 func New(provider provider.Provider) *KdbTree {
@@ -55,23 +36,19 @@ func New(provider provider.Provider) *KdbTree {
 		NodeIndex:   1,
 	}
 
-	tree := &KdbTree{
+	tree := KdbTree{
 		Provider:    provider,
-		Plugins:     make([]kdbplugin.KdbPlugin, 0),
+		Plugins:     make([]KdbPlugin, 0),
 		Root:        root,
 		errors:      errors,
 		nodeCounter: 1,
 	}
 
-	root.Tree = tree
-	return tree
+	root.Tree = &tree
+	return &tree
 }
 
-func (tree *KdbTree) RegisterPlugin(name string, p kdbplugin.KdbPlugin) {
-	tree.Plugins = append(tree.Plugins, p)
-}
-
-func (tree *KdbTree) Errors() <-chan error {
+func (tree *KdbTree) Errors() chan error {
 	return tree.errors
 }
 

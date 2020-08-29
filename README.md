@@ -32,3 +32,4 @@
   * [ ] Proper error handling
   * [ ] Logging
   * [ ] Testing
+  * [ ] Naming: plugin vs extension

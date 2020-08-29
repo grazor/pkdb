@@ -1,6 +1,7 @@
 package kdb
 
 import (
+	"context"
 	"fmt"
 	"io"
 	"path/filepath"
@@ -29,6 +30,15 @@ func (w kdbNodeWriter) Close() error {
 	}
 
 	return nil
+}
+
+func (w kdbNodeWriter) Write(p []byte) (int, error) {
+	for _, plugin := range w.node.Tree.Plugins {
+		if updater, ok := plugin.(KdbNodeUpdater); ok {
+			updater.NodeUpdated(context.TODO(), w.node, p)
+		}
+	}
+	return w.WriteCloser.Write(p)
 }
 
 func (node *KdbNode) Reader(off int64) (io.ReadCloser, error) {
