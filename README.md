@@ -7,6 +7,7 @@
   * [ ] gRPC
   * [ ] Sqlite
   * [ ] Postgres
+  * [ ] HASS integration
 * [ ] Servers
   * [X] FUSE
   * [ ] gRPC
@@ -32,3 +33,4 @@
   * [ ] Proper error handling
   * [ ] Logging
   * [ ] Testing
+  * [ ] Config presets
