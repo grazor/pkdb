@@ -11,7 +11,6 @@
   * [X] FUSE
   * [ ] gRPC
   * [ ] REST
-  * [ ] Web frontend
 * [ ] Plugins
   * [ ] Describe provider plugins
   * [ ] Configurable indexing
