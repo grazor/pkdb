@@ -22,7 +22,6 @@ func (entry fsEntry) metaAbsolutePath() (string, bool) {
 	if _, err := os.Stat(path); os.IsNotExist(err) {
 		if entry.fileInfo.IsDir() {
 			path = filepath.Join(absPath, ".yaml")
-
 		} else {
 			path = absPath + ".yaml"
 		}
@@ -60,6 +59,13 @@ func (entry fsEntry) Meta() (map[string]interface{}, error) {
 	}
 
 	return meta, nil
+}
+
+func (entry fsEntry) UpdateMete(data map[string]interface{}) error {
+	return provider.ProviderError{
+		Inner:   nil,
+		Message: "UpdateMeta is not yet implemented",
+	}
 }
 
 func (entry fsEntry) SetMeta(data map[string]interface{}) error {

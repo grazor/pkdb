@@ -15,6 +15,7 @@ func (err ProviderError) Error() string {
 }
 
 type Provider interface {
+	Plugins() []string
 	Get(path string) (Entry, error)
 }
 
@@ -32,6 +33,7 @@ type Entry interface {
 	Writer(off int64) (io.WriteCloser, error)
 
 	Meta() (map[string]interface{}, error)
+	UpdateMeta(map[string]interface{}) error
 	SetMeta(map[string]interface{}) error
 
 	AddChild(name string, container bool) (Entry, error)

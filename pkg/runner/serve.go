@@ -31,6 +31,12 @@ func Serve(ctx context.Context, providerURI string, serverURIs ...string) (*sync
 	}
 
 	kdbTree := kdb.New(provider)
+
+	err = ConfigurePlugins(kdbTree)
+	if err != nil {
+		return nil, err
+	}
+
 	serverErrors, wg, err := servers.Serve(ctx, kdbTree)
 	if err != nil {
 		msg := "Unexpected error occurred while starting server"
