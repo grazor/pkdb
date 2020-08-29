@@ -151,7 +151,6 @@ func (handle *FuseMetaHandle) Setattr(ctx context.Context, in *fuse.SetAttrIn, o
 }
 
 func (handle *FuseMetaHandle) Write(ctx context.Context, data []byte, off int64) (written uint32, errno syscall.Errno) {
-	//TODO: dont ignore offset parameter
 	if handle.writer == nil {
 		handle.server.errors <- server.ServerError{
 			Message: fmt.Sprintf("bufer is empty %v", handle.kdbNode),
@@ -164,6 +163,14 @@ func (handle *FuseMetaHandle) Write(ctx context.Context, data []byte, off int64)
 	if err == nil {
 		handle.server.errors <- server.ServerError{
 			Message: fmt.Sprintf("failed to parse yaml for %v", handle.kdbNode),
+		}
+		return 0, syscall.EFAULT
+	}
+
+	err = handle.kdbNode.SetMeta(meta)
+	if err == nil {
+		handle.server.errors <- server.ServerError{
+			Message: fmt.Sprintf("failed save metadata for %v", handle.kdbNode),
 		}
 		return 0, syscall.EFAULT
 	}

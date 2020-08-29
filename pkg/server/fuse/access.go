@@ -63,8 +63,10 @@ func (node *fuseNode) Mkdir(ctx context.Context, name string, mode uint32, out *
 	return newNode, fs.OK
 }
 
+// On meta delete: clean metadata
+// On target delete: unlink both target and meta
 func (node *fuseNode) Unlink(ctx context.Context, name string) syscall.Errno {
-	nodeToDelete, ok := node.kdbNode.Child(name)
+	nodeToDelete, isMeta, ok := childOrMeta(node.kdbNode, name, node.server.metaSuffix)
 	if !ok {
 		node.server.errors <- server.ServerError{
 			Message: fmt.Sprintf("node to delete does not exist %s / %s", node.kdbNode, name),
@@ -72,7 +74,13 @@ func (node *fuseNode) Unlink(ctx context.Context, name string) syscall.Errno {
 		return syscall.ENOENT
 	}
 
-	err := nodeToDelete.Delete()
+	var err error
+	if isMeta {
+		err = nodeToDelete.SetMeta(nil)
+	} else {
+		err = nodeToDelete.Delete()
+	}
+
 	if err != nil {
 		node.server.errors <- server.ServerError{
 			Inner:   err,
@@ -84,7 +92,7 @@ func (node *fuseNode) Unlink(ctx context.Context, name string) syscall.Errno {
 }
 
 func (node *fuseNode) Rmdir(ctx context.Context, name string) syscall.Errno {
-	nodeToDelete, ok := node.kdbNode.Child(name)
+	nodeToDelete, _, ok := childOrMeta(node.kdbNode, name, node.server.metaSuffix)
 	if !ok {
 		node.server.errors <- server.ServerError{
 			Message: fmt.Sprintf("node to delete does not exist %s / %s", node.kdbNode, name),
@@ -105,7 +113,7 @@ func (node *fuseNode) Rmdir(ctx context.Context, name string) syscall.Errno {
 }
 
 func (node *fuseNode) Rename(ctx context.Context, name string, newParent fs.InodeEmbedder, newName string, flags uint32) syscall.Errno {
-	moveNode, ok := node.kdbNode.Child(name)
+	moveNode, _, ok := childOrMeta(node.kdbNode, name, node.server.metaSuffix)
 	if !ok {
 		node.server.errors <- server.ServerError{
 			Message: fmt.Sprintf("node to move does not exist %v", moveNode),

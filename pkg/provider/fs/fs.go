@@ -8,6 +8,10 @@ import (
 	"github.com/grazor/pkdb/pkg/provider"
 )
 
+const (
+	defaultCreateMode = 0660
+)
+
 type fsProvider struct {
 	basePath string
 }

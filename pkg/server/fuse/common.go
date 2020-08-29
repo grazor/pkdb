@@ -68,6 +68,7 @@ func getattr(ctx context.Context, node *kdb.KdbNode, isMeta bool, serv *fuseServ
 	return getMetaAttr(ctx, node, serv, out)
 }
 
+// Lookups child node by name. returns meta=true if child node is a meta node
 func childOrMeta(node *kdb.KdbNode, name, suffix string) (childNode *kdb.KdbNode, meta bool, ok bool) {
 	if strings.HasSuffix(name, suffix) {
 		fileName := strings.TrimSuffix(name, suffix)

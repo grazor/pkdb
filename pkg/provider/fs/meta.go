@@ -62,6 +62,27 @@ func (entry fsEntry) Meta() (map[string]interface{}, error) {
 	return meta, nil
 }
 
-func (entry fsEntry) SetMeta(map[string]interface{}) error {
+func (entry fsEntry) SetMeta(data map[string]interface{}) error {
+	if data == nil {
+		data = make(map[string]interface{})
+	}
+
+	ymlData, err := yaml.Marshal(data)
+	if err != nil {
+		return provider.ProviderError{
+			Inner:   err,
+			Message: fmt.Sprintf("Unable to encode yaml data %s", err),
+		}
+	}
+
+	path, _ := entry.metaAbsolutePath()
+	err = ioutil.WriteFile(path, ymlData, defaultCreateMode)
+	if err != nil {
+		return provider.ProviderError{
+			Inner:   err,
+			Message: fmt.Sprintf("Unable to write metadata %s", err),
+		}
+	}
+
 	return nil
 }

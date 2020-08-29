@@ -68,6 +68,17 @@ func (entry fsEntry) AddChild(name string, container bool) (provider.Entry, erro
 
 func (entry fsEntry) Delete() error {
 	var err error
+
+	if metaPath, ok := entry.metaAbsolutePath(); ok {
+		err = syscall.Unlink(metaPath)
+		if err != nil {
+			return provider.ProviderError{
+				Inner:   err,
+				Message: fmt.Sprintf("unable to delete metadata for %v", entry.absolutePath()),
+			}
+		}
+	}
+
 	if entry.fileInfo.IsDir() {
 		err = syscall.Rmdir(entry.absolutePath())
 	} else {
