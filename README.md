@@ -7,7 +7,7 @@
   * [ ] gRPC
   * [ ] Sqlite
   * [ ] Postgres
-* [.] Servers
+* [ ] Servers
   * [X] FUSE
   * [ ] gRPC
   * [ ] REST
