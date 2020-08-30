@@ -15,6 +15,9 @@
   * [ ] Describe provider plugins
   * [ ] Plugin configuration
   * [ ] Extract metainfo on update
+    * [ ] File data
+    * [X] Markdown
+    * [ ] PDF
   * [ ] Configurable indexing
     * [ ] Breadcrumbs
     * [ ] TOC
