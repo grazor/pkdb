@@ -61,13 +61,6 @@ func (entry fsEntry) Meta() (map[string]interface{}, error) {
 	return meta, nil
 }
 
-func (entry fsEntry) UpdateMeta(data map[string]interface{}) error {
-	return provider.ProviderError{
-		Inner:   nil,
-		Message: "UpdateMeta is not yet implemented",
-	}
-}
-
 func (entry fsEntry) SetMeta(data map[string]interface{}) error {
 	if data == nil {
 		data = make(map[string]interface{})
@@ -91,4 +84,16 @@ func (entry fsEntry) SetMeta(data map[string]interface{}) error {
 	}
 
 	return nil
+}
+
+func (entry fsEntry) UpdateMeta(data map[string]interface{}) error {
+	meta, err := entry.Meta()
+	if err != nil {
+		return err
+	}
+
+	for k, v := range data {
+		meta[k] = v
+	}
+	return entry.SetMeta(meta)
 }

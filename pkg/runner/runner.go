@@ -19,6 +19,6 @@ func (err RunnerError) Error() string {
 }
 
 func handleError(err error, message string) {
-	log.Printf("%#v", err)
-	fmt.Printf("%v", message)
+	log.Printf("%#v\n", err)
+	fmt.Printf("%v\n", message)
 }

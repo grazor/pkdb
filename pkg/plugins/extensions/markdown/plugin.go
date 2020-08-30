@@ -3,7 +3,7 @@ package markdown
 
 import (
 	"context"
-	"fmt"
+	"io/ioutil"
 
 	"github.com/grazor/pkdb/pkg/kdb"
 	"github.com/yuin/goldmark"
@@ -31,38 +31,39 @@ func (p *markdownPlugin) ID() string {
 }
 
 func (p *markdownPlugin) NodeUpdated(ctx context.Context, node *kdb.KdbNode, data []byte) {
-	if node.MIME == "text/markdown" {
-		r := newRenderer()
-		md := goldmark.New(goldmark.WithParserOptions(parser.WithAttribute()), goldmark.WithRenderer(r))
-		fmt.Println("Preparse")
-		err := md.Convert(data, nil)
-		if err != nil {
-			p.tree.Errors() <- kdb.KdbError{
-				Inner:   err,
-				Message: "unable to process markdown data",
-			}
-		}
+	if node.MIME != "text/markdown" {
+		return
+	}
 
-		attributes := make(map[string]interface{})
-		if r.title != "" {
-			attributes["title"] = r.title
+	r := newRenderer()
+	md := goldmark.New(goldmark.WithParserOptions(parser.WithAttribute()), goldmark.WithRenderer(r))
+	err := md.Convert(data, ioutil.Discard)
+	if err != nil {
+		p.tree.Errors() <- kdb.KdbError{
+			Inner:   err,
+			Message: "unable to process markdown data",
 		}
-		if r.description != "" {
-			attributes["description"] = r.description
-		}
-		attributes["isActioable"] = r.isActioable
+		return
+	}
+
+	attributes := make(map[string]interface{})
+	if r.title != "" {
+		attributes["title"] = r.title
+	}
+	if r.description != "" {
+		attributes["description"] = r.description
+	}
+	attributes["isActionable"] = r.isActionable
+	if r.isActionable {
 		attributes["isCompleted"] = r.isCompleted
+	}
 
-		fmt.Println("PreUpdate")
-		err = node.UpdateMeta(attributes)
-		fmt.Println("postUpdate")
-		if err != nil {
-			p.tree.Errors() <- kdb.KdbError{
-				Inner:   err,
-				Message: "unable to process markdown data",
-			}
+	err = node.UpdateMeta(attributes)
+	if err != nil {
+		p.tree.Errors() <- kdb.KdbError{
+			Inner:   err,
+			Message: "unable to process markdown data",
 		}
-
-		panic("renderer is not implemented")
+		return
 	}
 }

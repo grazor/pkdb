@@ -199,6 +199,7 @@ func (fserver *fuseServer) String() string {
 func (fserver *fuseServer) Serve(ctx context.Context, wg *sync.WaitGroup, tree *kdb.KdbTree) error {
 	serve := func(c context.Context, w *sync.WaitGroup, fs *fuseServer, s *fuse.Server) {
 		defer w.Done()
+
 		<-c.Done()
 		s.Unmount()
 		if fs.mountpointCreated {
@@ -209,7 +210,7 @@ func (fserver *fuseServer) Serve(ctx context.Context, wg *sync.WaitGroup, tree *
 	fserver.tree = tree
 	fserver.fuseRoot = &fuseNode{server: fserver, kdbNode: tree.Root}
 
-	fuse, err := fs.Mount(fserver.mountPoint, fserver.fuseRoot, &fs.Options{
+	f, err := fs.Mount(fserver.mountPoint, fserver.fuseRoot, &fs.Options{
 		UID: fserver.userID,
 		GID: fserver.groupID,
 		MountOptions: fuse.MountOptions{
@@ -226,6 +227,7 @@ func (fserver *fuseServer) Serve(ctx context.Context, wg *sync.WaitGroup, tree *
 	}
 
 	wg.Add(1)
-	go serve(ctx, wg, fserver, fuse)
+	go serve(ctx, wg, fserver, f)
+
 	return nil
 }
