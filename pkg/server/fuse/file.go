@@ -13,6 +13,26 @@ import (
 	"github.com/hanwen/go-fuse/v2/fuse"
 )
 
+var _ fs.FileHandle = (*fuseHandle)(nil)
+var _ fs.FileAllocater = (*fuseHandle)(nil)
+var _ fs.FileFlusher = (*fuseHandle)(nil)
+var _ fs.FileFsyncer = (*fuseHandle)(nil)
+var _ fs.FileGetattrer = (*fuseHandle)(nil)
+var _ fs.FileLseeker = (*fuseHandle)(nil)
+var _ fs.FileReader = (*fuseHandle)(nil)
+var _ fs.FileReleaser = (*fuseHandle)(nil)
+var _ fs.FileSetattrer = (*fuseHandle)(nil)
+var _ fs.FileWriter = (*fuseHandle)(nil)
+
+type fuseHandle struct {
+	kdbNode *kdb.KdbNode
+	server  *fuseServer
+
+	reader     *bytes.Reader
+	writer     *bytes.Buffer
+	hasChanges bool
+}
+
 func newFuseHandle(node *kdb.KdbNode, serv *fuseServer, flags uint32) fs.FileHandle {
 	wSize := node.Size
 	if flags&syscall.O_TRUNC != syscall.O_TRUNC {
@@ -20,7 +40,7 @@ func newFuseHandle(node *kdb.KdbNode, serv *fuseServer, flags uint32) fs.FileHan
 	}
 
 	buf := make([]byte, node.Size)
-	handle := &fuseHandle{kdbNode: node, server: serv}
+	handle := &fuseHandle{kdbNode: node, server: serv, hasChanges: false}
 
 	// TODO: handle O_RDONLY == 0x0
 	if flags&syscall.O_RDONLY == syscall.O_RDONLY || flags&syscall.O_RDWR == syscall.O_RDWR {
@@ -51,33 +71,15 @@ func newFuseHandle(node *kdb.KdbNode, serv *fuseServer, flags uint32) fs.FileHan
 	return handle
 }
 
-type fuseHandle struct {
-	kdbNode *kdb.KdbNode
-	server  *fuseServer
-
-	reader *bytes.Reader
-	writer *bytes.Buffer
-}
-
-var _ fs.FileHandle = (*fuseHandle)(nil)
-var _ fs.FileAllocater = (*fuseHandle)(nil)
-var _ fs.FileFlusher = (*fuseHandle)(nil)
-var _ fs.FileFsyncer = (*fuseHandle)(nil)
-var _ fs.FileGetattrer = (*fuseHandle)(nil)
-var _ fs.FileLseeker = (*fuseHandle)(nil)
-var _ fs.FileReader = (*fuseHandle)(nil)
-var _ fs.FileReleaser = (*fuseHandle)(nil)
-var _ fs.FileSetattrer = (*fuseHandle)(nil)
-var _ fs.FileWriter = (*fuseHandle)(nil)
-
 func (handle *fuseHandle) Allocate(ctx context.Context, off uint64, size uint64, mode uint32) syscall.Errno {
 	return fs.OK
 }
 
 func (handle *fuseHandle) Flush(ctx context.Context) syscall.Errno {
-	if handle.writer == nil {
+	if handle.writer == nil || !handle.hasChanges {
 		return fs.OK
 	}
+	handle.hasChanges = false
 
 	writeCloser, err := handle.kdbNode.Writer(0)
 	if err != nil {
@@ -175,5 +177,6 @@ func (handle *fuseHandle) Write(ctx context.Context, data []byte, off int64) (wr
 		}
 		return 0, syscall.EFAULT
 	}
+	handle.hasChanges = true
 	return uint32(n), fs.OK
 }
